@@ -1,0 +1,6 @@
+{
+  "name": "Placement Guidance",
+  "description": "Engineering Career Portal with Placement Engine, Skill Gap Analysis, Company Eligibility Evaluator, and AI Placement Assistant.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,231 @@
+openapi: 3.1.0
+info:
+  title: Placement Bridge API
+  version: 1.0.0
+  description: >
+    Persistent PostgreSQL-backed REST API for Placement Bridge (Campus Placement Guidance,
+    Deterministic Eligibility & Readiness Engines, Practice Tracks, Grounded Gemini AI, and TPO Admin Console).
+servers:
+  - url: /api/v1
+    description: Versioned REST API
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    SuccessEnvelope:
+      type: object
+      required: [success, message, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        message:
+          type: string
+        data: {}
+        meta:
+          type: object
+    ErrorEnvelope:
+      type: object
+      required: [success, message, code]
+      properties:
+        success:
+          type: boolean
+          const: false
+        message:
+          type: string
+        code:
+          type: string
+        requestId:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+paths:
+  /health:
+    get:
+      summary: System & PostgreSQL health check
+      responses:
+        '200':
+          description: Database connected and capabilities reported
+  /auth/register:
+    post:
+      summary: Register a new student candidate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+                fullName: { type: string }
+                department: { type: string }
+                graduationYear: { type: integer }
+                cgpa: { type: number, minimum: 0, maximum: 10 }
+      responses:
+        '201': { description: Student registered and session issued }
+        '409': { description: Duplicate email }
+  /auth/login:
+    post:
+      summary: Student email & password sign-in
+      responses:
+        '200': { description: Access & refresh tokens issued }
+        '401': { description: Invalid credentials }
+        '423': { description: Account locked after 5 failed attempts }
+  /auth/admin/login:
+    post:
+      summary: Single-custodian TPO Administrator sign-in with cryptographic challenge
+      responses:
+        '200': { description: Admin session issued }
+        '401': { description: Invalid custodian credentials or challenge }
+  /auth/oauth/google:
+    post:
+      summary: Exchange Firebase Google ID Token for Placement Bridge session
+      responses:
+        '200': { description: Federated student session issued }
+  /auth/refresh:
+    post:
+      summary: Rotate opaque refresh token with reuse breach detection
+      responses:
+        '200': { description: Rotated access & refresh tokens }
+        '401': { description: Expired or reused token (all sessions revoked on reuse) }
+  /students/me:
+    get:
+      security: [{ bearerAuth: [] }]
+      summary: Get full student profile, skills, projects, completion, and readiness
+      responses:
+        '200': { description: Student profile context }
+    put:
+      security: [{ bearerAuth: [] }]
+      summary: Update student profile and recalculate completion & readiness
+      responses:
+        '200': { description: Updated profile }
+        '400': { description: Validation error }
+  /companies:
+    get:
+      summary: Paginated campus companies & roles with SAMPLE/VERIFIED status
+      responses:
+        '200': { description: Company list }
+  /eligibility/check:
+    post:
+      security: [{ bearerAuth: [] }]
+      summary: Run deterministic H2 eligibility evaluation across target or all roles
+      responses:
+        '200': { description: Persisted eligibility results }
+  /recommendations/run:
+    post:
+      security: [{ bearerAuth: [] }]
+      summary: Run deterministic H3 30/40/10/10/10 role recommendations
+      responses:
+        '200': { description: Ranked recommendations }
+  /skill-gap:
+    post:
+      security: [{ bearerAuth: [] }]
+      summary: Run deterministic H4 skill gap analysis and prerequisite topic roadmap
+      responses:
+        '200': { description: Skill gap report }
+  /aptitude/attempts:
+    post:
+      security: [{ bearerAuth: [] }]
+      summary: Start server-timed aptitude quiz attempt (answers & explanations stripped)
+      responses:
+        '201': { description: Active attempt created }
+  /aptitude/attempts/{id}/submit:
+    post:
+      security: [{ bearerAuth: [] }]
+      summary: Submit timed aptitude attempt for server-side H6 scoring
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Scored attempt with explanations }
+        '409': { description: Attempt already submitted }
+  /coding/problems:
+    get:
+      summary: List DSA coding problems with PRACTICE or SANDBOX capability mode
+      responses:
+        '200': { description: Problem list }
+  /coding/problems/{id}/submissions:
+    post:
+      security: [{ bearerAuth: [] }]
+      summary: Save or evaluate coding practice submission (never runs code on API host)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '201': { description: Submission recorded }
+  /interview/sessions:
+    post:
+      security: [{ bearerAuth: [] }]
+      summary: Create structured technical/HR mock interview session
+      responses:
+        '201': { description: Session created }
+  /resume:
+    post:
+      security: [{ bearerAuth: [] }]
+      summary: Save structured versioned resume
+      responses:
+        '201': { description: Resume version created }
+  /resume/{id}/pdf:
+    post:
+      security: [{ bearerAuth: [] }]
+      summary: Generate server-side PDF resume via pdfkit and return signed download URL
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Signed PDF URL }
+  /resume/analyze:
+    post:
+      security: [{ bearerAuth: [] }]
+      summary: Deterministic JD keyword & section resume audit with optional AI phrasing suggestions
+      responses:
+        '200': { description: Persisted resume analysis }
+  /ai/chat:
+    post:
+      security: [{ bearerAuth: [] }]
+      summary: Grounded Gemini placement advisor chat backed by PostgreSQL FACTS block
+      responses:
+        '200': { description: Grounded assistant reply with usedFacts }
+  /readiness:
+    get:
+      security: [{ bearerAuth: [] }]
+      summary: H7 6-category placement readiness breakdown with provisional indicator & disclaimer
+      responses:
+        '200': { description: Readiness evaluation }
+  /dashboard:
+    get:
+      security: [{ bearerAuth: [] }]
+      summary: Aggregated student dashboard payload in a single round-trip
+      responses:
+        '200': { description: Dashboard summary }
+  /admin/overview:
+    get:
+      security: [{ bearerAuth: [] }]
+      summary: TPO Admin overview KPIs (ADMIN role required)
+      responses:
+        '200': { description: Admin overview }
+        '403': { description: Forbidden for non-admin users }
+  /admin/reports/students.csv:
+    get:
+      security: [{ bearerAuth: [] }]
+      summary: Export formula-safe CSV of student readiness & eligibility metrics
+      responses:
+        '200': { description: CSV stream }
