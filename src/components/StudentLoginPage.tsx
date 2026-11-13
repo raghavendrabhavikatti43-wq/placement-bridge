@@ -371,7 +371,11 @@ export const StudentLoginPage: React.FC<StudentLoginPageProps> = ({
                 </div>
               )}
 
-              <form onSubmit={handleEmailSubmit} className="space-y-4 text-xs">
+              <form onSubmit={handleEmailSubmit} autoComplete="off" className="space-y-4 text-xs">
+                {/* Hidden dummy fields to neutralize Chrome password manager autofill */}
+                <input type="text" name="prevent_autofill_student_user" tabIndex={-1} aria-hidden="true" className="hidden" style={{ display: 'none' }} />
+                <input type="password" name="prevent_autofill_student_pwd" tabIndex={-1} aria-hidden="true" className="hidden" style={{ display: 'none' }} />
+
                 {mode === 'register' && (
                   <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
                     <div className="sm:col-span-5">
@@ -383,9 +387,11 @@ export const StudentLoginPage: React.FC<StudentLoginPageProps> = ({
                       </label>
                       <input
                         id="student-fullname-input"
+                        name="student_fullname_input"
                         type="text"
                         required
-                        placeholder="e.g., Priya Nair"
+                        autoComplete="off"
+                        placeholder=""
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         className="w-full px-3.5 py-2.5 rounded-xl border border-surface-container-high bg-surface-container-low text-on-surface outline-none focus:border-secondary"
@@ -441,10 +447,13 @@ export const StudentLoginPage: React.FC<StudentLoginPageProps> = ({
                   </label>
                   <input
                     id="student-email-input"
+                    name="student_official_email"
                     type="email"
                     required
-                    autoComplete="email"
-                    placeholder="student.name@nie.edu.in"
+                    autoComplete="off"
+                    data-lpignore="true"
+                    data-form-type="other"
+                    placeholder=""
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-surface-container-high bg-surface-container-low text-on-surface outline-none focus:border-secondary"
@@ -464,11 +473,12 @@ export const StudentLoginPage: React.FC<StudentLoginPageProps> = ({
                   <div className="relative flex items-center">
                     <input
                       id="student-password-input"
+                      name="student_user_password"
                       type={showPassword ? 'text' : 'password'}
                       required
                       minLength={6}
-                      autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-                      placeholder="Enter your student password"
+                      autoComplete="new-password"
+                      placeholder=""
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="w-full pl-3.5 pr-16 py-2.5 rounded-xl border border-surface-container-high bg-surface-container-low text-on-surface outline-none focus:border-secondary"

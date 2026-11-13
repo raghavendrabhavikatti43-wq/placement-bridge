@@ -205,7 +205,11 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+              <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4 text-xs">
+                {/* Hidden dummy fields to neutralize Chrome password manager autofill */}
+                <input type="text" name="prevent_autofill_user" tabIndex={-1} aria-hidden="true" className="hidden" style={{ display: 'none' }} />
+                <input type="password" name="prevent_autofill_pwd" tabIndex={-1} aria-hidden="true" className="hidden" style={{ display: 'none' }} />
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label
@@ -216,10 +220,11 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
                     </label>
                     <input
                       id="admin-userid-input"
+                      name="admin_custodian_id"
                       type="text"
                       required
                       autoComplete="off"
-                      placeholder="TPO-ADMIN-01"
+                      placeholder=""
                       value={userId}
                       onChange={(e) => setUserId(e.target.value)}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white font-mono placeholder:text-slate-400 dark:placeholder:text-slate-600 outline-none focus:border-indigo-600 dark:focus:border-indigo-500"
@@ -235,10 +240,13 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
                     </label>
                     <input
                       id="admin-email-input"
+                      name="admin_custodian_email"
                       type="email"
                       required
-                      autoComplete="username"
-                      placeholder="admin.tpo@nie-placement.edu"
+                      autoComplete="off"
+                      data-lpignore="true"
+                      data-form-type="other"
+                      placeholder=""
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 outline-none focus:border-indigo-600 dark:focus:border-indigo-500"
@@ -256,10 +264,11 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
                   <div className="relative flex items-center">
                     <input
                       id="admin-password-input"
+                      name="admin_custodian_password"
                       type={showPassword ? 'text' : 'password'}
                       required
-                      autoComplete="current-password"
-                      placeholder="Enter restricted master password"
+                      autoComplete="new-password"
+                      placeholder=""
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="w-full pl-3.5 pr-16 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 outline-none focus:border-indigo-600 dark:focus:border-indigo-500"
