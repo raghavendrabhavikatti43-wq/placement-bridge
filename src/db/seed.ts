@@ -1221,9 +1221,13 @@ async function runInChunks<T>(
   chunkSize: number,
   worker: (item: T, index: number) => Promise<void>
 ): Promise<void> {
-  for (let i = 0; i < items.length; i += chunkSize) {
-    const slice = items.slice(i, i + chunkSize);
+  const safeChunk = Math.min(chunkSize, 2);
+  for (let i = 0; i < items.length; i += safeChunk) {
+    const slice = items.slice(i, i + safeChunk);
     await Promise.all(slice.map((item, offset) => worker(item, i + offset)));
+    if (i + safeChunk < items.length) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
   }
 }
 
@@ -1984,15 +1988,13 @@ export async function runIdempotentSeed(): Promise<Record<string, number>> {
       description: 'Completed a mock interview practice session with rubric feedback.',
     },
   ];
-  await Promise.all(
-    badgeDefs.map((b) =>
-      prisma.badge.upsert({
-        where: { code: b.code },
-        create: b,
-        update: { name: b.name, description: b.description },
-      })
-    )
-  );
+  for (const b of badgeDefs) {
+    await prisma.badge.upsert({
+      where: { code: b.code },
+      create: b,
+      update: { name: b.name, description: b.description },
+    });
+  }
 
   // 9. Seed 10 Diverse Students (including Aditya Sharma + backlog + null-CGPA + near-perfect)
   const studentSeeds: {
@@ -2770,10 +2772,21 @@ export async function ensureSeededOnce(): Promise<void> {
     await seedPromise;
     return;
   }
-  const [existingComps, existingStudents] = await Promise.all([
-    prisma.company.count(),
-    prisma.studentProfile.count(),
-  ]);
+  // Sequential queries + retry to handle Neon cold-start (free tier sleeps after inactivity).
+  // Neon can take up to ~15s to wake from sleep; we retry up to 5x with backoff.
+  let existingComps = 0;
+  let existingStudents = 0;
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    try {
+      existingComps = await prisma.company.count();
+      existingStudents = await prisma.studentProfile.count();
+      break;
+    } catch (err) {
+      if (attempt === 5) throw err;
+      // Exponential backoff: 2s, 4s, 6s, 8s
+      await new Promise((r) => setTimeout(r, 2000 * attempt));
+    }
+  }
   if (existingComps >= 15 && existingStudents >= 10) {
     return;
   }

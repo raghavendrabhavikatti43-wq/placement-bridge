@@ -45,7 +45,7 @@ export function createApiApp() {
   // ==========================================================================
   // 1. HEALTH & CAPABILITIES ENDPOINT (Part F1 — Neon PostgreSQL via Prisma)
   // ==========================================================================
-  app.get('/api/v1/health', async (_req, res) => {
+  app.get(['/api/health', '/api/v1/health'], async (_req, res) => {
     let dbHealthy = false;
     try {
       await prisma.$queryRaw`SELECT 1`;
@@ -59,7 +59,9 @@ export function createApiApp() {
       res,
       {
         status: dbHealthy ? 'ok' : 'degraded',
+        server: 'online',
         database: dbHealthy ? 'connected' : 'unreachable',
+        version: '1.0.0',
         ...capabilities,
         timestamp: new Date().toISOString(),
       },

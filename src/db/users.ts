@@ -93,25 +93,15 @@ export async function recalculateAndPersistProfileCompletion(studentId: string, 
 
     const effectiveUserId = userId || profile.userId;
 
-    const [
-      skillsCount,
-      projectsCount,
-      certsCount,
-      internshipsCount,
-      achievementsCount,
-      resumesCount,
-      pref,
-      resumeFilesCount,
-    ] = await Promise.all([
-      prisma.studentSkill.count({ where: { studentId } }),
-      prisma.project.count({ where: { studentId } }),
-      prisma.certification.count({ where: { studentId } }),
-      prisma.internship.count({ where: { studentId } }),
-      prisma.achievement.count({ where: { studentId } }),
-      prisma.resume.count({ where: { studentId } }),
-      prisma.studentPreference.findUnique({ where: { studentId } }),
-      prisma.fileAsset.count({ where: { ownerId: effectiveUserId } }),
-    ]);
+    // Sequential queries to avoid exhausting Neon PgBouncer connection pool
+    const skillsCount = await prisma.studentSkill.count({ where: { studentId } });
+    const projectsCount = await prisma.project.count({ where: { studentId } });
+    const certsCount = await prisma.certification.count({ where: { studentId } });
+    const internshipsCount = await prisma.internship.count({ where: { studentId } });
+    const achievementsCount = await prisma.achievement.count({ where: { studentId } });
+    const resumesCount = await prisma.resume.count({ where: { studentId } });
+    const pref = await prisma.studentPreference.findUnique({ where: { studentId } });
+    const resumeFilesCount = await prisma.fileAsset.count({ where: { ownerId: effectiveUserId } });
 
     const hasPreferences = Boolean(
       pref &&

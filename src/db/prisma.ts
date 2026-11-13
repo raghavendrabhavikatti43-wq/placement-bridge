@@ -30,13 +30,14 @@ function buildNormalizedDatasourceUrl(): string {
       parsed.searchParams.set('pgbouncer', 'true');
     }
     if (!parsed.searchParams.has('connect_timeout')) {
-      parsed.searchParams.set('connect_timeout', '15');
+      parsed.searchParams.set('connect_timeout', '30');
     }
     if (!parsed.searchParams.has('pool_timeout')) {
-      parsed.searchParams.set('pool_timeout', '30');
+      parsed.searchParams.set('pool_timeout', '60');
     }
     if (isPooler && !parsed.searchParams.has('connection_limit')) {
-      parsed.searchParams.set('connection_limit', '10');
+      // Neon free tier PgBouncer: keep connection count low to avoid pool exhaustion
+      parsed.searchParams.set('connection_limit', '3');
     }
 
     return parsed.toString();

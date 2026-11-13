@@ -22,7 +22,7 @@ let studentAProjectId = '';
 
 beforeAll(async () => {
   await ensureSeededOnce();
-}, 60000);
+}, 120000);
 
 afterAll(async () => {
   if (createdCompanyIds.length > 0) {
