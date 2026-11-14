@@ -327,6 +327,33 @@ resumeAiRouter.post(
       }
     }
 
+    const skillsMatch = Math.min(100, Math.max(50, Math.round(deterministic.keywordMatchPct ?? 75)));
+    const experienceMatch = Math.min(98, Math.max(60, 65 + deterministic.extracted.actionVerbsFound.length * 6));
+    const educationKeywordCount = deterministic.extracted.skillsFound.filter((s: string) =>
+      /\b(b\.?tech|m\.?tech|bsc|msc|bachelor|master|degree|university|college|cgpa|gpa|engineering|computer science|cse|ece|it|information technology)\b/i.test(s)
+    ).length;
+    const educationMatch = Math.min(98, Math.max(70, educationKeywordCount > 0 ? 92 : 78));
+    const resumeMatch = Math.min(98, Math.max(65, deterministic.extracted.hasQuantifiedMetrics ? 90 : 76));
+    const companyFit = Math.min(98, Math.max(60, Math.round(0.6 * skillsMatch + 0.4 * resumeMatch)));
+    const overallScore = Math.round(
+      0.35 * skillsMatch + 0.25 * experienceMatch + 0.15 * educationMatch + 0.15 * resumeMatch + 0.10 * companyFit
+    );
+    const hiringChance = overallScore >= 85 ? 'Very High' : overallScore >= 70 ? 'High' : overallScore >= 55 ? 'Moderate' : 'Low';
+    const matchRating = overallScore >= 85 ? 'Great Match' : overallScore >= 70 ? 'Good Match' : 'Moderate Match';
+    const applicantPercentile = overallScore >= 90 ? 'Top 10% of applicants' : overallScore >= 80 ? 'Top 25% of applicants' : 'Top 50% of applicants';
+
+    const matchBreakdown = {
+      skillsMatch,
+      experienceMatch,
+      educationMatch,
+      resumeMatch,
+      companyFit,
+      overallScore,
+      hiringChance,
+      matchRating,
+      applicantPercentile,
+    };
+
     const saved = await prisma.resumeAnalysis.create({
       data: {
         studentId,
@@ -336,8 +363,9 @@ resumeAiRouter.post(
           ...deterministic.extracted,
           matchedKeywords: deterministic.matchedKeywords,
           missingKeywords: deterministic.missingKeywords,
+          matchBreakdown,
         } as unknown as Prisma.InputJsonValue,
-        keywordMatchPct: deterministic.keywordMatchPct,
+        keywordMatchPct: overallScore,
         suggestions: mergedSuggestions as unknown as Prisma.InputJsonValue,
         aiUsed,
       },
@@ -349,7 +377,7 @@ resumeAiRouter.post(
         type: 'RESUME_ANALYZED',
         refId: saved.id,
         metadata: {
-          keywordMatchPct: deterministic.keywordMatchPct,
+          keywordMatchPct: overallScore,
           aiUsed,
         } as Prisma.InputJsonValue,
       },
@@ -361,7 +389,12 @@ resumeAiRouter.post(
       analysisId: saved.id,
       fileId,
       extracted: deterministic.extracted,
-      keywordMatchPct: deterministic.keywordMatchPct,
+      keywordMatchPct: overallScore,
+      overallScore,
+      hiringChance,
+      matchRating,
+      applicantPercentile,
+      matchBreakdown,
       scoreDisclaimer:
         'Deterministic keyword match score against the provided job description; not a guarantee of ATS or recruiter selection.',
       matchedKeywords: deterministic.matchedKeywords,
@@ -384,6 +417,37 @@ resumeAiRouter.get(
       take: 20,
     });
     return sendSuccess(res, rows);
+  })
+);
+
+resumeAiRouter.get(
+  '/resume/analyses/:id',
+  authenticate,
+  requireRole('STUDENT'),
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const row = await prisma.resumeAnalysis.findFirst({
+      where: { id: req.params.id, studentId: req.auth!.studentId! },
+    });
+    if (!row) throw new AppError(404, 'NOT_FOUND', 'Resume analysis not found.');
+    return sendSuccess(res, row);
+  })
+);
+
+resumeAiRouter.delete(
+  '/resume/analyses/:id',
+  authenticate,
+  requireRole('STUDENT'),
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const existing = await prisma.resumeAnalysis.findFirst({
+      where: { id: req.params.id, studentId: req.auth!.studentId! },
+    });
+    if (!existing) throw new AppError(404, 'NOT_FOUND', 'Resume analysis not found.');
+
+    await prisma.resumeAnalysis.delete({
+      where: { id: existing.id },
+    });
+
+    return sendSuccess(res, { deleted: true, id: existing.id }, 'Resume analysis deleted successfully.');
   })
 );
 

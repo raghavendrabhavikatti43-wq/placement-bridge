@@ -107,6 +107,7 @@ export function createApiApp() {
   // ==========================================================================
   // 4. POSTGRESQL-BACKED /api/* COMPATIBILITY ROUTES FOR EXISTING FRONTEND
   // ==========================================================================
+  app.use('/api', resumeAiRouter);
   app.use('/api', legacyCompatRouter);
 
   // 404 handler strictly for unmatched /api/* routes (allows Vite SPA catch-all for non-API paths)

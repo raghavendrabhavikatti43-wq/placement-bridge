@@ -15,6 +15,7 @@ export type NavigationPath =
   | 'applications'
   | 'resources'
   | 'ai-assistant'
+  | 'resume-screening'
   | 'settings'
   | 'logout';
 

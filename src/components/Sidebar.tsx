@@ -223,6 +223,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <span className="material-symbols-outlined text-[20px]">smart_toy</span>
                 <span className="font-label-lg">AI Assistant</span>
               </button>
+              <button
+                id="nav-resume-screening"
+                onClick={() => handleNav('resume-screening')}
+                className={navItemClass('resume-screening')}
+              >
+                <span className="material-symbols-outlined text-[20px]">document_scanner</span>
+                <span className="font-label-lg">Resume Screening</span>
+              </button>
             </div>
           </nav>
         </div>
