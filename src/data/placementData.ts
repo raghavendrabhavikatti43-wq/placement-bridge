@@ -447,49 +447,47 @@ export const CODING_PROBLEMS: CodingProblem[] = [
     description:
       'Given an integer array arr[] of size N, return the second largest distinct element in the array. If the second largest distinct element does not exist, return -1.',
     constraints: '2 ≤ N ≤ 10^5, 1 ≤ arr[i] ≤ 10^9',
+    inputFormat: 'Integer array arr',
+    outputFormat: 'Return the second largest distinct integer or -1',
     sampleInput: 'arr = [12, 35, 1, 10, 34, 35]',
     sampleOutput: '34',
+    explanation: 'The largest element of the array is 35 and the second largest distinct element is 34.',
+    hints: [
+      'Can you solve this in a single traversal without sorting?',
+      'Maintain two variables: first_largest and second_largest initialized to -1.',
+      'When an element is strictly greater than first_largest, update second_largest then first_largest.'
+    ],
     javaCode: `class Solution {
-    public static int getSecondLargest(int[] arr) {
-        int first = -1, second = -1;
-        for (int x : arr) {
-            if (x > first) {
-                second = first;
-                first = x;
-            } else if (x > second && x != first) {
-                second = x;
-            }
-        }
-        return second;
+    public int getSecondLargest(int[] arr) {
+        // Write your solution here
+        return -1;
     }
 }`,
     pythonCode: `class Solution:
-    def get_second_largest(self, arr: list[int]) -> int:
-        first, second = -1, -1
-        for x in arr:
-            if x > first:
-                second = first
-                first = x
-            elif x > second and x != first:
-                second = x
-        return second`,
+    def getSecondLargest(self, arr: list[int]) -> int:
+        # Write your solution here
+        pass`,
     cppCode: `#include <vector>
 using namespace std;
 
 class Solution {
 public:
-    int getSecondLargest(const vector<int>& arr) {
-        int first = -1, second = -1;
-        for (int x : arr) {
-            if (x > first) {
-                second = first;
-                first = x;
-            } else if (x > second && x != first) {
-                second = x;
-            }
-        }
-        return second;
+    int getSecondLargest(vector<int>& arr) {
+        // Write your solution here
+        return -1;
     }
+};`,
+    cCode: `int getSecondLargest(int* arr, int arrSize) {
+    // Write your solution here
+    return -1;
+}`,
+    jsCode: `/**
+ * @param {number[]} arr
+ * @return {number}
+ */
+var getSecondLargest = function(arr) {
+    // Write your solution here
+    return -1;
 };`,
     testCasesCount: 4,
     runTime: '12ms',
@@ -504,55 +502,47 @@ public:
     description:
       'Given a string s, find the length of the longest contiguous substring that contains no duplicate characters.',
     constraints: '0 ≤ s.length ≤ 5 × 10^4, s consists of ASCII letters, digits, and symbols',
+    inputFormat: 'String s',
+    outputFormat: 'Return an integer representing maximum length',
     sampleInput: 's = "abcabcbb"',
     sampleOutput: '3',
-    javaCode: `import java.util.*;
-
-class Solution {
+    explanation: 'The answer is "abc", with length of 3. "pwke" is a subsequence, not a substring.',
+    hints: [
+      'Use a sliding window with two pointers: left and right.',
+      'Keep track of characters seen using a hash map or boolean array.',
+      'When a duplicate is encountered, slide the left pointer past its previous occurrence.'
+    ],
+    javaCode: `class Solution {
     public int lengthOfLongestSubstring(String s) {
-        int[] lastSeen = new int[128];
-        Arrays.fill(lastSeen, -1);
-        int left = 0, best = 0;
-        for (int right = 0; right < s.length(); right++) {
-            char c = s.charAt(right);
-            if (lastSeen[c] >= left) {
-                left = lastSeen[c] + 1;
-            }
-            lastSeen[c] = right;
-            best = Math.max(best, right - left + 1);
-        }
-        return best;
+        // Write your solution here
+        return 0;
     }
 }`,
     pythonCode: `class Solution:
     def lengthOfLongestSubstring(self, s: str) -> int:
-        last_seen: dict[str, int] = {}
-        left = 0
-        best = 0
-        for right, ch in enumerate(s):
-            if ch in last_seen and last_seen[ch] >= left:
-                left = last_seen[ch] + 1
-            last_seen[ch] = right
-            best = max(best, right - left + 1)
-        return best`,
+        # Write your solution here
+        pass`,
     cppCode: `#include <string>
-#include <vector>
-#include <algorithm>
 using namespace std;
 
 class Solution {
 public:
     int lengthOfLongestSubstring(string s) {
-        vector<int> lastSeen(128, -1);
-        int left = 0, best = 0;
-        for (int right = 0; right < (int)s.size(); ++right) {
-            unsigned char c = s[right];
-            if (lastSeen[c] >= left) left = lastSeen[c] + 1;
-            lastSeen[c] = right;
-            best = max(best, right - left + 1);
-        }
-        return best;
+        // Write your solution here
+        return 0;
     }
+};`,
+    cCode: `int lengthOfLongestSubstring(char* s) {
+    // Write your solution here
+    return 0;
+}`,
+    jsCode: `/**
+ * @param {string} s
+ * @return {number}
+ */
+var lengthOfLongestSubstring = function(s) {
+    // Write your solution here
+    return 0;
 };`,
     testCasesCount: 6,
     runTime: '9ms',
@@ -567,52 +557,48 @@ public:
     description:
       'Given an array of intervals where intervals[i] = [start_i, end_i], merge all overlapping intervals and return an array of the non-overlapping intervals covering the input.',
     constraints: '1 ≤ intervals.length ≤ 10^4, 0 ≤ start_i ≤ end_i ≤ 10^4',
+    inputFormat: '2D array intervals where intervals[i] = [start, end]',
+    outputFormat: 'Return non-overlapping merged intervals',
     sampleInput: 'intervals = [[1,3],[2,6],[8,10],[15,18]]',
     sampleOutput: '[[1,6],[8,10],[15,18]]',
-    javaCode: `import java.util.*;
-
-class Solution {
+    explanation: 'Since intervals [1,3] and [2,6] overlap, merge them into [1,6].',
+    hints: [
+      'Sort intervals by their start times first.',
+      'Iterate through sorted intervals: if the current interval overlaps with the previous one, merge by taking max end time.',
+      'Otherwise, add the interval to result.'
+    ],
+    javaCode: `class Solution {
     public int[][] merge(int[][] intervals) {
-        Arrays.sort(intervals, (a, b) -> Integer.compare(a[0], b[0]));
-        List<int[]> merged = new ArrayList<>();
-        for (int[] curr : intervals) {
-            if (merged.isEmpty() || merged.get(merged.size() - 1)[1] < curr[0]) {
-                merged.add(curr);
-            } else {
-                merged.get(merged.size() - 1)[1] = Math.max(merged.get(merged.size() - 1)[1], curr[1]);
-            }
-        }
-        return merged.toArray(new int[merged.size()][]);
+        // Write your solution here
+        return new int[][]{};
     }
 }`,
     pythonCode: `class Solution:
     def merge(self, intervals: list[list[int]]) -> list[list[int]]:
-        intervals.sort(key=lambda x: x[0])
-        merged: list[list[int]] = []
-        for start, end in intervals:
-            if not merged or merged[-1][1] < start:
-                merged.append([start, end])
-            else:
-                merged[-1][1] = max(merged[-1][1], end)
-        return merged`,
+        # Write your solution here
+        pass`,
     cppCode: `#include <vector>
-#include <algorithm>
 using namespace std;
 
 class Solution {
 public:
     vector<vector<int>> merge(vector<vector<int>>& intervals) {
-        sort(intervals.begin(), intervals.end());
-        vector<vector<int>> merged;
-        for (const auto& curr : intervals) {
-            if (merged.empty() || merged.back()[1] < curr[0]) {
-                merged.push_back(curr);
-            } else {
-                merged.back()[1] = max(merged.back()[1], curr[1]);
-            }
-        }
-        return merged;
+        // Write your solution here
+        return {};
     }
+};`,
+    cCode: `int** merge(int** intervals, int intervalsSize, int* intervalsColSize, int* returnSize, int** returnColumnSizes) {
+    // Write your solution here
+    *returnSize = 0;
+    return 0;
+}`,
+    jsCode: `/**
+ * @param {number[][]} intervals
+ * @return {number[][]}
+ */
+var merge = function(intervals) {
+    // Write your solution here
+    return [];
 };`,
     testCasesCount: 5,
     runTime: '14ms',
@@ -627,58 +613,47 @@ public:
     description:
       'Given a circular integer array nums, return the next greater number for every element. Wrap around to the start of the array if needed, or output -1 if none exists.',
     constraints: '1 ≤ nums.length ≤ 10^4, -10^9 ≤ nums[i] ≤ 10^9',
+    inputFormat: 'Integer array nums',
+    outputFormat: 'Array of next greater elements of size N',
     sampleInput: 'nums = [1, 2, 1]',
     sampleOutput: '[2, -1, 2]',
-    javaCode: `import java.util.*;
-
-class Solution {
+    explanation: 'The first 1\'s next greater number is 2; the number 2 has no next greater number; the second 1 wraps around to find 2.',
+    hints: [
+      'Can you simulate a circular array by iterating 2 * N times using modulo i % N?',
+      'Use a monotonic decreasing stack storing indices.'
+    ],
+    javaCode: `class Solution {
     public int[] nextGreaterElements(int[] nums) {
-        int n = nums.length;
-        int[] res = new int[n];
-        Arrays.fill(res, -1);
-        Deque<Integer> stack = new ArrayDeque<>();
-        for (int i = 0; i < 2 * n; i++) {
-            int curr = nums[i % n];
-            while (!stack.isEmpty() && nums[stack.peek()] < curr) {
-                res[stack.pop()] = curr;
-            }
-            if (i < n) stack.push(i);
-        }
-        return res;
+        // Write your solution here
+        return new int[]{};
     }
 }`,
     pythonCode: `class Solution:
     def nextGreaterElements(self, nums: list[int]) -> list[int]:
-        n = len(nums)
-        res = [-1] * n
-        stack: list[int] = []
-        for i in range(2 * n):
-            curr = nums[i % n]
-            while stack and nums[stack[-1]] < curr:
-                res[stack.pop()] = curr
-            if i < n:
-                stack.append(i)
-        return res`,
+        # Write your solution here
+        pass`,
     cppCode: `#include <vector>
-#include <stack>
 using namespace std;
 
 class Solution {
 public:
     vector<int> nextGreaterElements(vector<int>& nums) {
-        int n = nums.size();
-        vector<int> res(n, -1);
-        stack<int> st;
-        for (int i = 0; i < 2 * n; ++i) {
-            int curr = nums[i % n];
-            while (!st.empty() && nums[st.top()] < curr) {
-                res[st.top()] = curr;
-                st.pop();
-            }
-            if (i < n) st.push(i);
-        }
-        return res;
+        // Write your solution here
+        return {};
     }
+};`,
+    cCode: `int* nextGreaterElements(int* nums, int numsSize, int* returnSize) {
+    // Write your solution here
+    *returnSize = 0;
+    return 0;
+}`,
+    jsCode: `/**
+ * @param {number[]} nums
+ * @return {number[]}
+ */
+var nextGreaterElements = function(nums) {
+    // Write your solution here
+    return [];
 };`,
     testCasesCount: 5,
     runTime: '15ms',
@@ -693,37 +668,78 @@ public:
     description:
       'Given the root of a binary tree and two node references p and q, find their Lowest Common Ancestor (the deepest node that has both p and q as descendants, where a node can be a descendant of itself).',
     constraints: '2 ≤ Nodes ≤ 10^5, All Node.val are unique, p != q',
+    inputFormat: 'TreeNode root, TreeNode p, TreeNode q',
+    outputFormat: 'Return the lowest common ancestor TreeNode',
     sampleInput: 'root = [3,5,1,6,2,0,8,null,null,7,4], p = 5, q = 4',
     sampleOutput: '5',
-    javaCode: `class Solution {
+    explanation: 'The LCA of node 5 and node 4 is 5, since a node can be a descendant of itself.',
+    hints: [
+      'If the current node is null, or matches p or q, return current node.',
+      'Recurse on left and right subtrees.',
+      'If both subtrees return non-null, current node is the LCA.'
+    ],
+    javaCode: `/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+class Solution {
     public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
-        if (root == null || root == p || root == q) {
-            return root;
-        }
-        TreeNode left = lowestCommonAncestor(root.left, p, q);
-        TreeNode right = lowestCommonAncestor(root.right, p, q);
-        if (left != null && right != null) return root;
-        return left != null ? left : right;
+        // Write your solution here
+        return null;
     }
 }`,
-    pythonCode: `class Solution:
+    pythonCode: `# Definition for a binary tree node.
+# class TreeNode:
+#     def __init__(self, x):
+#         self.val = x
+#         self.left = None
+#         self.right = None
+
+class Solution:
     def lowestCommonAncestor(self, root: 'TreeNode', p: 'TreeNode', q: 'TreeNode') -> 'TreeNode':
-        if not root or root == p or root == q:
-            return root
-        left = self.lowestCommonAncestor(root.left, p, q)
-        right = self.lowestCommonAncestor(root.right, p, q)
-        if left and right:
-            return root
-        return left or right`,
-    cppCode: `class Solution {
+        # Write your solution here
+        pass`,
+    cppCode: `/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+ * };
+ */
+class Solution {
 public:
     TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
-        if (!root || root == p || root == q) return root;
-        TreeNode* left = lowestCommonAncestor(root->left, p, q);
-        TreeNode* right = lowestCommonAncestor(root->right, p, q);
-        if (left && right) return root;
-        return left ? left : right;
+        // Write your solution here
+        return nullptr;
     }
+};`,
+    cCode: `struct TreeNode* lowestCommonAncestor(struct TreeNode* root, struct TreeNode* p, struct TreeNode* q) {
+    // Write your solution here
+    return 0;
+}`,
+    jsCode: `/**
+ * Definition for a binary tree node.
+ * function TreeNode(val) {
+ *     this.val = val;
+ *     this.left = this.right = null;
+ * }
+ */
+/**
+ * @param {TreeNode} root
+ * @param {TreeNode} p
+ * @param {TreeNode} q
+ * @return {TreeNode}
+ */
+var lowestCommonAncestor = function(root, p, q) {
+    // Write your solution here
+    return null;
 };`,
     testCasesCount: 5,
     runTime: '16ms',
@@ -738,41 +754,48 @@ public:
     description:
       'Given weights[] and values[] of N items and a knapsack capacity W, compute the maximum total value achievable by selecting each item at most once.',
     constraints: '1 ≤ N ≤ 1000, 1 ≤ W ≤ 1000, 1 ≤ values[i], weights[i] ≤ 1000',
+    inputFormat: 'Integer W, array weights[], array values[]',
+    outputFormat: 'Return maximum achievable integer value',
     sampleInput: 'W = 50, weights = [10, 20, 30], values = [60, 100, 120]',
     sampleOutput: '220',
+    explanation: 'Choose items with weights 20 and 30 (total weight 50) for maximum value 100 + 120 = 220.',
+    hints: [
+      'Define dp[w] as max value for capacity w.',
+      'Iterate backwards from W to wt[i] to ensure each item is only taken once.'
+    ],
     javaCode: `class Solution {
     public int knapSack(int W, int[] weights, int[] values) {
-        int[] dp = new int[W + 1];
-        for (int i = 0; i < weights.length; i++) {
-            for (int w = W; w >= weights[i]; w--) {
-                dp[w] = Math.max(dp[w], values[i] + dp[w - weights[i]]);
-            }
-        }
-        return dp[W];
+        // Write your solution here
+        return 0;
     }
 }`,
     pythonCode: `class Solution:
     def knapSack(self, W: int, weights: list[int], values: list[int]) -> int:
-        dp = [0] * (W + 1)
-        for wt, val in zip(weights, values):
-            for w in range(W, wt - 1, -1):
-                dp[w] = max(dp[w], val + dp[w - wt])
-        return dp[W]`,
+        # Write your solution here
+        pass`,
     cppCode: `#include <vector>
-#include <algorithm>
 using namespace std;
 
 class Solution {
 public:
     int knapSack(int W, const vector<int>& weights, const vector<int>& values) {
-        vector<int> dp(W + 1, 0);
-        for (size_t i = 0; i < weights.size(); ++i) {
-            for (int w = W; w >= weights[i]; --w) {
-                dp[w] = max(dp[w], values[i] + dp[w - weights[i]]);
-            }
-        }
-        return dp[W];
+        // Write your solution here
+        return 0;
     }
+};`,
+    cCode: `int knapSack(int W, int* weights, int* values, int n) {
+    // Write your solution here
+    return 0;
+}`,
+    jsCode: `/**
+ * @param {number} W
+ * @param {number[]} weights
+ * @param {number[]} values
+ * @return {number}
+ */
+var knapSack = function(W, weights, values) {
+    // Write your solution here
+    return 0;
 };`,
     testCasesCount: 6,
     runTime: '21ms',
@@ -787,81 +810,50 @@ public:
     description:
       'Given numCourses labeled 0 to numCourses - 1 and prerequisites pairs [a, b] meaning b must be taken before a, return true if you can finish all courses without circular dependency.',
     constraints: '1 ≤ numCourses ≤ 2000, 0 ≤ prerequisites.length ≤ 5000',
+    inputFormat: 'Integer numCourses, 2D array prerequisites',
+    outputFormat: 'Return boolean true if finishable, false otherwise',
     sampleInput: 'numCourses = 4, prerequisites = [[1,0],[2,0],[3,1],[3,2]]',
     sampleOutput: 'true',
-    javaCode: `import java.util.*;
-
-class Solution {
+    explanation: 'There are 4 courses. Course 0 can be taken first, then 1 and 2, and finally 3.',
+    hints: [
+      'Model as directed graph and compute indegree for each node.',
+      'Push nodes with indegree 0 into a BFS queue (Kahn algorithm).',
+      'If count of visited nodes equals numCourses, graph is acyclic.'
+    ],
+    javaCode: `class Solution {
     public boolean canFinish(int numCourses, int[][] prerequisites) {
-        List<List<Integer>> adj = new ArrayList<>();
-        int[] indegree = new int[numCourses];
-        for (int i = 0; i < numCourses; i++) adj.add(new ArrayList<>());
-        for (int[] pre : prerequisites) {
-            adj.get(pre[1]).add(pre[0]);
-            indegree[pre[0]]++;
-        }
-        Queue<Integer> q = new ArrayDeque<>();
-        for (int i = 0; i < numCourses; i++) {
-            if (indegree[i] == 0) q.offer(i);
-        }
-        int visited = 0;
-        while (!q.isEmpty()) {
-            int curr = q.poll();
-            visited++;
-            for (int next : adj.get(curr)) {
-                if (--indegree[next] == 0) q.offer(next);
-            }
-        }
-        return visited == numCourses;
+        // Write your solution here
+        return false;
     }
 }`,
-    pythonCode: `from collections import deque
-
-class Solution:
+    pythonCode: `class Solution:
     def canFinish(self, numCourses: int, prerequisites: list[list[int]]) -> bool:
-        adj = [[] for _ in range(numCourses)]
-        indegree = [0] * numCourses
-        for course, pre in prerequisites:
-            adj[pre].append(course)
-            indegree[course] += 1
-        q = deque(i for i in range(numCourses) if indegree[i] == 0)
-        visited = 0
-        while q:
-            curr = q.popleft()
-            visited += 1
-            for nxt in adj[curr]:
-                indegree[nxt] -= 1
-                if indegree[nxt] == 0:
-                    q.append(nxt)
-        return visited == numCourses`,
+        # Write your solution here
+        pass`,
     cppCode: `#include <vector>
-#include <queue>
 using namespace std;
 
 class Solution {
 public:
     bool canFinish(int numCourses, vector<vector<int>>& prerequisites) {
-        vector<vector<int>> adj(numCourses);
-        vector<int> indegree(numCourses, 0);
-        for (const auto& pre : prerequisites) {
-            adj[pre[1]].push_back(pre[0]);
-            indegree[pre[0]]++;
-        }
-        queue<int> q;
-        for (int i = 0; i < numCourses; ++i) {
-            if (indegree[i] == 0) q.push(i);
-        }
-        int visited = 0;
-        while (!q.empty()) {
-            int curr = q.front();
-            q.pop();
-            visited++;
-            for (int nxt : adj[curr]) {
-                if (--indegree[nxt] == 0) q.push(nxt);
-            }
-        }
-        return visited == numCourses;
+        // Write your solution here
+        return false;
     }
+};`,
+    cCode: `#include <stdbool.h>
+
+bool canFinish(int numCourses, int** prerequisites, int prerequisitesSize, int* prerequisitesColSize) {
+    // Write your solution here
+    return false;
+}`,
+    jsCode: `/**
+ * @param {number} numCourses
+ * @param {number[][]} prerequisites
+ * @return {boolean}
+ */
+var canFinish = function(numCourses, prerequisites) {
+    // Write your solution here
+    return false;
 };`,
     testCasesCount: 5,
     runTime: '18ms',
@@ -876,58 +868,46 @@ public:
     description:
       'Given n non-negative integers representing an elevation map where the width of each bar is 1, compute how much total water can be trapped after raining.',
     constraints: '1 ≤ height.length ≤ 2 × 10^4, 0 ≤ height[i] ≤ 10^5',
+    inputFormat: 'Integer array height',
+    outputFormat: 'Return total units of trapped water',
     sampleInput: 'height = [0,1,0,2,1,0,1,3,2,1,2,1]',
     sampleOutput: '6',
+    explanation: 'The elevation map traps 6 units of rain water between the peaks.',
+    hints: [
+      'At index i, water trapped is min(max_left, max_right) - height[i].',
+      'Can you optimize space to O(1) using two pointers moving inward?'
+    ],
     javaCode: `class Solution {
     public int trap(int[] height) {
-        int left = 0, right = height.length - 1;
-        int leftMax = 0, rightMax = 0, water = 0;
-        while (left < right) {
-            if (height[left] <= height[right]) {
-                leftMax = Math.max(leftMax, height[left]);
-                water += leftMax - height[left++];
-            } else {
-                rightMax = Math.max(rightMax, height[right]);
-                water += rightMax - height[right--];
-            }
-        }
-        return water;
+        // Write your solution here
+        return 0;
     }
 }`,
     pythonCode: `class Solution:
     def trap(self, height: list[int]) -> int:
-        left, right = 0, len(height) - 1
-        left_max, right_max, water = 0, 0, 0
-        while left < right:
-            if height[left] <= height[right]:
-                left_max = max(left_max, height[left])
-                water += left_max - height[left]
-                left += 1
-            else:
-                right_max = max(right_max, height[right])
-                water += right_max - height[right]
-                right -= 1
-        return water`,
+        # Write your solution here
+        pass`,
     cppCode: `#include <vector>
-#include <algorithm>
 using namespace std;
 
 class Solution {
 public:
     int trap(const vector<int>& height) {
-        int left = 0, right = (int)height.size() - 1;
-        int leftMax = 0, rightMax = 0, water = 0;
-        while (left < right) {
-            if (height[left] <= height[right]) {
-                leftMax = max(leftMax, height[left]);
-                water += leftMax - height[left++];
-            } else {
-                rightMax = max(rightMax, height[right]);
-                water += rightMax - height[right--];
-            }
-        }
-        return water;
+        // Write your solution here
+        return 0;
     }
+};`,
+    cCode: `int trap(int* height, int heightSize) {
+    // Write your solution here
+    return 0;
+}`,
+    jsCode: `/**
+ * @param {number[]} height
+ * @return {number}
+ */
+var trap = function(height) {
+    // Write your solution here
+    return 0;
 };`,
     testCasesCount: 7,
     runTime: '11ms',

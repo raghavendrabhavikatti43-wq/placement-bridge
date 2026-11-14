@@ -177,8 +177,14 @@ export interface CodingProblem {
   javaCode: string;
   pythonCode: string;
   cppCode: string;
+  cCode?: string;
+  jsCode?: string;
   testCasesCount: number;
   runTime: string;
+  hints?: string[];
+  inputFormat?: string;
+  outputFormat?: string;
+  explanation?: string;
 }
 
 export type ApplicationStatus =

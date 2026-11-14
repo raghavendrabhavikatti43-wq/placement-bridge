@@ -9,7 +9,7 @@ import {
   scoreQuizAttempt,
   type QuizQuestionForScoring,
 } from '../engines/quizScoring.ts';
-import { executeInTrustedSandbox } from '../integrations/codeExecution.ts';
+import { executeInTrustedSandbox, runProblemCode } from '../integrations/codeExecution.ts';
 import { generateAiInterviewFeedback } from '../integrations/gemini.ts';
 import {
   authenticate,
@@ -74,6 +74,13 @@ const submitAttemptSchema = z.object({
     .optional(),
   // Intentionally allow unknown `score` key in body so we can prove server ignores client score!
   score: z.unknown().optional(),
+});
+
+const codingRunSchema = z.object({
+  languageId: z.string().uuid().optional(),
+  languageKey: z.string().trim().max(40).default('java'),
+  sourceCode: z.string().min(1).max(64_000),
+  customInput: z.string().max(4000).optional(),
 });
 
 const codingSubmissionSchema = z.object({
@@ -700,6 +707,43 @@ practiceRouter.get(
 );
 
 practiceRouter.post(
+  '/coding/problems/:id/run',
+  optionalAuthenticate,
+  validateBody(codingRunSchema),
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const idOrSlug = String(req.params.id);
+    const isUuid = UUID_REGEX.test(idOrSlug);
+
+    const prob = await prisma.codingProblem.findFirst({
+      where: isUuid
+        ? { OR: [{ id: idOrSlug }, { slug: idOrSlug }] }
+        : { slug: idOrSlug },
+    });
+    if (!prob) throw new AppError(404, 'PROBLEM_NOT_FOUND', 'Coding problem not found.');
+
+    const sampleTests = await prisma.codingTestCase.findMany({
+      where: { problemId: prob.id, isHidden: false },
+      select: { id: true, input: true, expectedOutput: true },
+    });
+
+    const testCasesToRun =
+      sampleTests.length > 0
+        ? sampleTests
+        : [{ id: 'sample-0', input: prob.sampleInput, expectedOutput: prob.sampleOutput }];
+
+    const verdict = await runProblemCode({
+      problemSlug: prob.slug || prob.id,
+      languageKey: req.body.languageKey || 'java',
+      sourceCode: req.body.sourceCode,
+      customInput: req.body.customInput,
+      testCases: testCasesToRun,
+    });
+
+    return sendSuccess(res, verdict, 'Code run executed');
+  })
+);
+
+practiceRouter.post(
   '/coding/problems/:id/submissions',
   authenticate,
   requireRole('STUDENT'),
@@ -723,55 +767,29 @@ practiceRouter.post(
       ? langs.find((l) => l.key.toLowerCase() === req.body.languageKey.toLowerCase())
       : langs[0];
 
-    const { executionEnabled } = getCapabilityFlags();
+    const allTests = await prisma.codingTestCase.findMany({
+      where: { problemId: prob.id },
+      select: { id: true, input: true, expectedOutput: true, isHidden: true },
+    });
 
-    let status: 'ATTEMPTED' | 'SELF_MARKED_SOLVED' | 'PASSED' | 'FAILED' | 'ERROR' =
-      req.body.selfMarkSolved ? 'SELF_MARKED_SOLVED' : 'ATTEMPTED';
-    let executed = false;
-    let testsPassed: number | null = null;
-    let testsTotal: number | null = null;
-    let resultDetail: Record<string, unknown> = {
-      mode: 'PRACTICE',
-      note: 'Code saved in practice mode. External execution sandbox is disabled.',
-    };
+    const testCasesToRun =
+      allTests.length > 0
+        ? allTests
+        : [{ id: 'sample-0', input: prob.sampleInput, expectedOutput: prob.sampleOutput, isHidden: false }];
 
-    if (executionEnabled) {
-      const allTests = await prisma.codingTestCase.findMany({
-        where: { problemId: prob.id },
-      });
-      let passCount = 0;
-      let anyError = false;
-      const publicCaseFeedback: Record<string, unknown>[] = [];
+    const verdict = await runProblemCode({
+      problemSlug: prob.slug || prob.id,
+      languageKey: matchedLang?.key || req.body.languageKey || 'java',
+      sourceCode: req.body.sourceCode,
+      testCases: testCasesToRun,
+    });
 
-      for (const tc of allTests) {
-        const run = await executeInTrustedSandbox({
-          languageKey: matchedLang?.key || 'python',
-          externalLanguageId: matchedLang?.externalId,
-          sourceCode: req.body.sourceCode,
-          stdin: tc.input,
-        });
-        executed = executed || run.executed;
-        const matchedOut = run.stdout.trim() === tc.expectedOutput.trim();
-        if (run.status === 'ERROR') anyError = true;
-        if (run.executed && matchedOut) passCount++;
-
-        // NEVER leak hidden test case inputs or expected outputs!
-        publicCaseFeedback.push(
-          tc.isHidden
-            ? { hidden: true, passed: run.executed && matchedOut }
-            : {
-                hidden: false,
-                passed: run.executed && matchedOut,
-                actualOutput: run.stdout.slice(0, 500),
-              }
-        );
-      }
-
-      testsTotal = allTests.length;
-      testsPassed = passCount;
-      status = anyError ? 'ERROR' : passCount === allTests.length ? 'PASSED' : 'FAILED';
-      resultDetail = { mode: 'SANDBOX', cases: publicCaseFeedback };
-    }
+    const status: 'PASSED' | 'FAILED' | 'ERROR' =
+      verdict.status === 'COMPILATION_ERROR'
+        ? 'ERROR'
+        : verdict.passed
+        ? 'PASSED'
+        : 'FAILED';
 
     const saved = await prisma.codingSubmission.create({
       data: {
@@ -780,12 +798,36 @@ practiceRouter.post(
         languageId: matchedLang?.id ?? null,
         sourceCode: req.body.sourceCode,
         status,
-        executed,
-        testsPassed,
-        testsTotal,
-        resultDetail: resultDetail as Prisma.InputJsonValue,
+        executed: true,
+        testsPassed: verdict.passedCases,
+        testsTotal: verdict.totalCases,
+        resultDetail: {
+          verdict: verdict.status,
+          compileError: verdict.compileError,
+          runtimeError: verdict.runtimeError,
+          cases: verdict.testResults.map((r, i) => {
+            const isHidden = testCasesToRun[i]?.isHidden ?? false;
+            return {
+              caseIndex: i + 1,
+              passed: r.passed,
+              runtimeMs: r.runtimeMs,
+              ...(isHidden
+                ? { isHidden: true }
+                : { input: r.input, expected: r.expectedOutput, actual: r.actualOutput }),
+            };
+          }),
+        } as Prisma.InputJsonValue,
       },
     });
+
+    if (verdict.passed) {
+      await prisma.studentProfile
+        .update({
+          where: { id: studentId },
+          data: { leetcodeSolved: { increment: 1 } },
+        })
+        .catch(() => {});
+    }
 
     await prisma.learningActivityLog.create({
       data: {
@@ -796,7 +838,8 @@ practiceRouter.post(
           problemId: prob.id,
           title: prob.title,
           status,
-          executed,
+          executed: true,
+          verdict: verdict.status,
         } as Prisma.InputJsonValue,
       },
     });
@@ -807,13 +850,10 @@ practiceRouter.post(
       res,
       {
         submission: saved,
-        executed,
-        executionEnabled,
-        mode: executionEnabled ? 'SANDBOX' : 'PRACTICE',
+        verdict,
+        executed: true,
       },
-      executionEnabled
-        ? 'Submission evaluated in external sandbox'
-        : 'Submission saved in practice mode',
+      verdict.passed ? 'Solution accepted!' : 'Submission evaluated',
       201
     );
   })

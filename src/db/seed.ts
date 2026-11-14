@@ -1846,6 +1846,9 @@ export async function runIdempotentSeed(): Promise<Record<string, number>> {
       update: {
         slug: cp.id,
         complexity: cp.complexity,
+        javaStarter: cp.javaCode,
+        pythonStarter: cp.pythonCode,
+        cppStarter: cp.cppCode,
       },
     });
 
