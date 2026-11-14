@@ -1,13 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  AptitudeQuestion,
   ChatMessage,
-  CodingProblem,
   CompanyDrive,
   SkillGapItem,
   StudentProfile,
 } from '../types';
-import { APTITUDE_QUESTIONS, CODING_PROBLEMS } from '../data/placementData';
 
 interface AiAssistantViewProps {
   profile: StudentProfile;
@@ -56,41 +53,6 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
   const [isTyping, setIsTyping] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
-
-  // Aptitude state
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [showAnswerFeedback, setShowAnswerFeedback] = useState(false);
-  const [timerSeconds, setTimerSeconds] = useState(18 * 60 + 42);
-
-  // Coding challenge state
-  const [selectedLanguage, setSelectedLanguage] = useState<'java' | 'python'>('java');
-  const activeCodeProblem: CodingProblem = CODING_PROBLEMS[0];
-  const [customCode, setCustomCode] = useState<string>(activeCodeProblem.javaCode);
-  const [codeExecutionResult, setCodeExecutionResult] = useState<string | null>(null);
-  const [isRunningCode, setIsRunningCode] = useState(false);
-
-  const activeQuestion: AptitudeQuestion =
-    APTITUDE_QUESTIONS[currentQuestionIndex] || APTITUDE_QUESTIONS[0];
-
-  useEffect(() => {
-    setCustomCode(
-      selectedLanguage === 'java' ? activeCodeProblem.javaCode : activeCodeProblem.pythonCode
-    );
-  }, [selectedLanguage, activeCodeProblem]);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimerSeconds((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const formatTimer = (sec: number) => {
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  };
 
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -153,77 +115,24 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
     }
   };
 
-  const handleSelectOption = (optKey: string) => {
-    setSelectedOption(optKey);
-    setShowAnswerFeedback(true);
-  };
-
-  const handleNextQuestion = () => {
-    setShowAnswerFeedback(false);
-    setSelectedOption(null);
-    setCurrentQuestionIndex((prev) => (prev + 1) % APTITUDE_QUESTIONS.length);
-  };
-
-  const handlePrevQuestion = () => {
-    setShowAnswerFeedback(false);
-    setSelectedOption(null);
-    setCurrentQuestionIndex(
-      (prev) => (prev - 1 + APTITUDE_QUESTIONS.length) % APTITUDE_QUESTIONS.length
-    );
-  };
-
-  const handleRunCode = async (useAiJudge = false) => {
-    setIsRunningCode(true);
-    setCodeExecutionResult(null);
-
-    if (!useAiJudge) {
-      setTimeout(() => {
-        setIsRunningCode(false);
-        setCodeExecutionResult(
-          `Passed ${activeCodeProblem.testCasesCount}/${activeCodeProblem.testCasesCount} Public Test Cases [${activeCodeProblem.runTime}] · Output: ${activeCodeProblem.sampleOutput}`
-        );
-      }, 450);
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/ai/code-review', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          problemTitle: activeCodeProblem.title,
-          problemDescription: activeCodeProblem.description,
-          language: selectedLanguage === 'java' ? 'Java' : 'Python 3',
-          code: customCode,
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Code evaluation failed.');
-      setCodeExecutionResult(
-        `${data.passed ? 'Accepted' : 'Review Suggested'} · ${data.timeComplexity} time, ${data.spaceComplexity} space — ${data.summary}`
-      );
-    } catch (err) {
-      setCodeExecutionResult(
-        err instanceof Error ? err.message : 'Could not run AI complexity judge.'
-      );
-    } finally {
-      setIsRunningCode(false);
-    }
-  };
-
   return (
     <div id="ai-assistant-view" className="space-y-space-md animate-in fade-in duration-200">
       {/* Top Banner */}
-      <div className="bg-surface-container-lowest p-space-md rounded-2xl border border-surface-container-low flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
+      <div className="bg-surface-container-lowest p-space-md rounded-2xl border border-surface-container-low flex flex-col md:flex-row md:items-center justify-between gap-space-sm shadow-xs">
         <div>
-          <span className="font-label-sm text-outline block mb-1">
-            Intelligence · Contextual Career Coaching &amp; Practice
-          </span>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              Placement Intelligence Engine Active
+            </span>
+            <span className="text-[11px] text-outline font-medium">·</span>
+            <span className="text-[11px] text-outline font-medium">Context-Grounded</span>
+          </div>
           <h1 className="font-headline-xl text-on-surface font-extrabold tracking-tight">
-            AI Placement Assistant &amp; Preparation Engine
+            AI Placement Assistant &amp; Career Mentor
           </h1>
           <p className="font-body-md text-on-surface-variant max-w-2xl mt-1">
-            Live mentoring grounded in your academic dossier, paired with timed aptitude and coding drills.
+            Real-time personalized placement guidance, interview coaching, and cutoff diagnostics directly grounded in your student dossier.
           </p>
         </div>
 
@@ -241,28 +150,33 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
               <span className="text-xs text-secondary font-bold ml-1.5">+4% this week</span>
             </div>
           </div>
-          <div className="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center text-secondary">
-            <span className="material-symbols-outlined text-[20px]">insights</span>
+          <div className="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-secondary">
+            <span className="material-symbols-outlined text-[22px]">insights</span>
           </div>
         </div>
       </div>
 
-      {/* Main Grid: Left 7-col Chat Terminal, Right 5-col Live Practice Hub */}
+      {/* Main Grid: Left 7-col Chat Terminal, Right 5-col AI Assistant Details & Capabilities */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-sm">
-        {/* Left 7-col: Placement AI Mentor */}
-        <div className="lg:col-span-7 bg-surface-container-lowest p-space-md rounded-2xl border border-surface-container-low flex flex-col justify-between h-[780px]">
+        {/* Left 7-col: Placement AI Mentor Interactive Chat */}
+        <div className="lg:col-span-7 bg-surface-container-lowest p-space-md rounded-2xl border border-surface-container-low flex flex-col justify-between h-[780px] shadow-xs">
           <div>
             <div className="flex items-center justify-between pb-space-xs border-b border-surface-container-low">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-secondary">
-                  <span className="material-symbols-outlined text-[20px]">smart_toy</span>
+                <div className="w-9 h-9 rounded-xl bg-secondary/10 border border-secondary/20 flex items-center justify-center text-secondary">
+                  <span className="material-symbols-outlined text-[22px]">smart_toy</span>
                 </div>
                 <div>
-                  <h2 className="font-headline-sm text-on-surface font-bold">
-                    Placement AI Mentor
-                  </h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-headline-sm text-on-surface font-bold">
+                      Placement AI Mentor
+                    </h2>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-secondary/15 text-secondary">
+                      Online
+                    </span>
+                  </div>
                   <span className="text-[11px] text-outline block">
-                    Synced with {companies.length} campus drives &amp; {skillGaps.length} active gaps
+                    Grounded with {companies.length} campus drives &amp; {skillGaps.length} target skill gaps
                   </span>
                 </div>
               </div>
@@ -274,32 +188,34 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
                     {
                       id: 'msg-reset',
                       sender: 'assistant',
-                      text: `Session cleared. Ready to plan your next sprint for ${profile.targetRole}, ${profile.name.split(' ')[0]}. What should we tackle?`,
+                      text: `Session refreshed. Ready to strategize for your target role (${profile.targetRole}), ${profile.name.split(' ')[0]}. What would you like to prepare for today?`,
                       timestamp: 'Now',
                     },
                   ]);
                 }}
-                className="px-2.5 py-1 rounded-lg text-xs text-outline hover:text-on-surface hover:bg-surface-container-low transition-colors whitespace-nowrap shrink-0"
+                className="px-2.5 py-1.5 rounded-lg text-xs text-outline hover:text-on-surface hover:bg-surface-container-low transition-colors whitespace-nowrap shrink-0 flex items-center gap-1 border border-surface-container-low"
               >
+                <span className="material-symbols-outlined text-[14px]">refresh</span>
                 Reset Session
               </button>
             </div>
 
             {/* Context Strip */}
-            <div className="mt-2 py-1.5 px-2.5 rounded-lg bg-surface-container-low text-[11px] text-on-surface-variant flex flex-wrap items-center justify-between gap-2 tabular-nums">
+            <div className="mt-2.5 py-2 px-3 rounded-xl bg-surface-container-low text-[11px] text-on-surface-variant flex flex-wrap items-center justify-between gap-2 tabular-nums border border-surface-container">
               <span>
-                <strong>Dossier:</strong> {profile.name} · CGPA {profile.cgpa.toFixed(2)} · {profile.department}
+                <strong>Active Dossier:</strong> {profile.name} · CGPA {profile.cgpa.toFixed(2)} · {profile.department}
               </span>
               <span className="text-secondary font-bold">Target: {profile.targetRole}</span>
             </div>
 
-            {/* Suggested Prompt Buttons */}
-            <div className="flex items-center gap-1.5 overflow-x-auto py-2.5">
+            {/* Suggested Quick Prompt Buttons */}
+            <div className="flex items-center gap-1.5 overflow-x-auto py-2.5 scrollbar-thin">
               {[
                 'Analyze my skill gaps for Microsoft SDE-1',
                 'Build a 7-day DP & Graph revision schedule',
                 'Give me 5 Oracle DBMS & SQL interview questions',
                 'Critique my STAR approach for a team conflict question',
+                'Evaluate my Day-0 drive eligibility',
               ].map((prompt, i) => (
                 <button
                   key={i}
@@ -314,7 +230,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
           </div>
 
           {/* Chat Messages Stream */}
-          <div className="flex-1 overflow-y-auto space-y-3.5 pr-1 my-2">
+          <div className="flex-1 overflow-y-auto space-y-3.5 pr-1.5 my-2.5 scrollbar-thin">
             {messages.map((msg) => (
               <div
                 key={msg.id}
@@ -323,7 +239,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
                 <div
                   className={`max-w-[90%] sm:max-w-[85%] p-3.5 rounded-2xl text-xs sm:text-sm leading-relaxed ${
                     msg.sender === 'user'
-                      ? 'bg-secondary text-on-secondary rounded-br-xs'
+                      ? 'bg-secondary text-on-secondary rounded-br-xs shadow-xs'
                       : 'bg-surface-container-low text-on-surface rounded-bl-xs border border-surface-container'
                   }`}
                 >
@@ -359,8 +275,9 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
             ))}
 
             {isTyping && (
-              <div className="p-3 rounded-2xl bg-surface-container-low text-xs text-outline w-fit">
-                Synthesizing placement guidance...
+              <div className="flex items-center gap-2 p-3 rounded-2xl bg-surface-container-low text-xs text-outline w-fit border border-surface-container">
+                <span className="w-2 h-2 rounded-full bg-secondary animate-ping"></span>
+                <span>Synthesizing contextual placement guidance...</span>
               </div>
             )}
 
@@ -393,7 +310,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
               <button
                 type="submit"
                 disabled={!inputMessage.trim() || isTyping}
-                className="px-3.5 py-2 rounded-lg bg-secondary text-on-secondary text-xs font-bold hover:bg-secondary-container transition-colors disabled:opacity-40 flex items-center gap-1 whitespace-nowrap shrink-0"
+                className="px-4 py-2 rounded-lg bg-secondary text-on-secondary text-xs font-bold hover:bg-secondary-container transition-colors disabled:opacity-40 flex items-center gap-1.5 whitespace-nowrap shrink-0"
               >
                 <span>Send</span>
                 <span className="material-symbols-outlined text-[16px]">send</span>
@@ -402,196 +319,158 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
           </div>
         </div>
 
-        {/* Right 5-col: Live Practice & Assessment Hub */}
+        {/* Right 5-col: AI Assistant Details & Capabilities */}
         <div className="lg:col-span-5 space-y-space-sm">
-          {/* Card 1: Aptitude & Logical Reasoning Drill */}
-          <div className="bg-surface-container-lowest p-space-md rounded-2xl border border-surface-container-low space-y-3">
-            <div className="flex items-center justify-between pb-space-xs border-b border-surface-container-low">
+          {/* Card 1: AI Assistant Architecture & Intelligence Specs */}
+          <div className="bg-surface-container-lowest p-space-md rounded-2xl border border-surface-container-low space-y-3.5 shadow-xs">
+            <div className="flex items-center gap-2.5 pb-2 border-b border-surface-container-low">
+              <span className="material-symbols-outlined text-secondary text-[22px]">
+                neurology
+              </span>
+              <div>
+                <h3 className="font-headline-sm text-on-surface font-bold">
+                  AI Assistant Intelligence Specs
+                </h3>
+                <span className="text-[11px] text-outline block">
+                  System architecture &amp; real-time knowledge grounding
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5 text-xs">
+              <div className="p-3 rounded-xl bg-surface-container-low border border-surface-container">
+                <span className="text-[10px] uppercase font-bold text-outline block mb-0.5">
+                  Reasoning Engine
+                </span>
+                <span className="font-bold text-on-surface">Adaptive Placement LLM</span>
+                <span className="text-[11px] text-emerald-600 dark:text-emerald-400 block mt-0.5 font-medium">
+                  Active &amp; Responsive
+                </span>
+              </div>
+              <div className="p-3 rounded-xl bg-surface-container-low border border-surface-container">
+                <span className="text-[10px] uppercase font-bold text-outline block mb-0.5">
+                  Dossier Sync
+                </span>
+                <span className="font-bold text-on-surface">Live Academic DB</span>
+                <span className="text-[11px] text-secondary block mt-0.5 font-medium">
+                  Zero Hallucination Grounded
+                </span>
+              </div>
+              <div className="p-3 rounded-xl bg-surface-container-low border border-surface-container">
+                <span className="text-[10px] uppercase font-bold text-outline block mb-0.5">
+                  Connected Drives
+                </span>
+                <span className="font-bold text-on-surface">{companies.length} Campus Drives</span>
+                <span className="text-[11px] text-outline block mt-0.5">
+                  Microsoft, Google, Amazon, etc.
+                </span>
+              </div>
+              <div className="p-3 rounded-xl bg-surface-container-low border border-surface-container">
+                <span className="text-[10px] uppercase font-bold text-outline block mb-0.5">
+                  Target Diagnostics
+                </span>
+                <span className="font-bold text-on-surface">{skillGaps.length} Skill Gaps</span>
+                <span className="text-[11px] text-outline block mt-0.5">
+                  Prioritized by recurrence
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2: Student Dossier Context Seen by AI Assistant */}
+          <div className="bg-surface-container-lowest p-space-md rounded-2xl border border-surface-container-low space-y-3 shadow-xs">
+            <div className="flex items-center justify-between pb-2 border-b border-surface-container-low">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-secondary text-[20px]">
-                  calculate
+                  badge
                 </span>
                 <h3 className="font-headline-sm text-on-surface font-bold">
-                  Aptitude &amp; Core CS Drill
+                  Grounded Student Dossier
                 </h3>
               </div>
-              <div className="flex items-center gap-1 font-mono text-xs font-bold text-error tabular-nums">
-                <span className="material-symbols-outlined text-[15px]">timer</span>
-                <span>{formatTimer(timerSeconds)}</span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between text-xs text-outline tabular-nums">
-              <span className="font-semibold">
-                Question {currentQuestionIndex + 1} of {APTITUDE_QUESTIONS.length}
+              <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                Verified
               </span>
-              <span className="text-secondary font-semibold">{activeQuestion.patternBadge}</span>
             </div>
 
-            <p className="font-body-sm text-on-surface font-medium leading-relaxed">
-              {activeQuestion.question}
-            </p>
-
-            <div className="space-y-2">
-              {activeQuestion.options.map((opt) => {
-                const isSelected = selectedOption === opt.key;
-                const isCorrect = opt.key === activeQuestion.correctAnswer;
-                let optStyle =
-                  'bg-surface-container-low border-surface-container hover:bg-surface-container text-on-surface';
-
-                if (showAnswerFeedback) {
-                  if (isCorrect) {
-                    optStyle =
-                      'bg-emerald-500/15 border-emerald-500 text-emerald-900 dark:text-emerald-200 font-bold';
-                  } else if (isSelected && !isCorrect) {
-                    optStyle = 'bg-error-container border-error text-on-error-container font-bold';
-                  }
-                } else if (isSelected) {
-                  optStyle = 'bg-surface-container-highest border-secondary text-primary font-bold';
-                }
-
-                return (
-                  <button
-                    key={opt.key}
-                    onClick={() => handleSelectOption(opt.key)}
-                    className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-xs text-left transition-colors ${optStyle}`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <span className="w-5 h-5 rounded-full bg-surface-container-lowest border border-current flex items-center justify-center text-[10px] font-mono">
-                        {opt.key}
-                      </span>
-                      <span>{opt.text}</span>
-                    </div>
-                    {showAnswerFeedback && isCorrect && (
-                      <span className="material-symbols-outlined text-emerald-600 text-[18px]">
-                        check_circle
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            {showAnswerFeedback && (
-              <div className="p-2.5 bg-surface-container-low rounded-xl text-[11px] text-on-surface-variant leading-relaxed">
-                <strong className="text-on-surface block mb-0.5">Explanation:</strong>
-                {activeQuestion.explanation}
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-surface-container-low">
+                <span className="text-outline">Candidate Name</span>
+                <span className="font-bold text-on-surface">{profile.name}</span>
               </div>
-            )}
-
-            <div className="flex items-center justify-between pt-2 border-t border-surface-container-low text-xs font-semibold">
-              <button
-                onClick={handlePrevQuestion}
-                className="px-3 py-1.5 rounded-lg text-outline hover:text-on-surface transition-colors"
-              >
-                Previous
-              </button>
-              <button
-                onClick={handleNextQuestion}
-                className="px-3.5 py-1.5 rounded-lg bg-secondary text-on-secondary hover:bg-secondary-container transition-colors"
-              >
-                Next Question
-              </button>
-            </div>
-          </div>
-
-          {/* Card 2: Quick Coding Blitz (Editable + AI Judge) */}
-          <div className="bg-surface-container-lowest p-space-md rounded-2xl border border-surface-container-low space-y-3">
-            <div className="flex items-center justify-between pb-space-xs border-b border-surface-container-low">
-              <div>
-                <span className="text-[11px] text-outline font-semibold block">Coding Blitz</span>
-                <h3 className="font-headline-sm text-on-surface font-bold">
-                  {activeCodeProblem.title}
-                </h3>
+              <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-surface-container-low">
+                <span className="text-outline">Academic Branch</span>
+                <span className="font-bold text-on-surface">{profile.department}</span>
               </div>
-
-              <div className="flex items-center gap-1 bg-surface-container-low p-1 rounded-lg">
-                <button
-                  onClick={() => setSelectedLanguage('java')}
-                  className={`px-2.5 py-1 rounded text-[11px] font-bold transition-colors ${
-                    selectedLanguage === 'java'
-                      ? 'bg-surface-container-lowest text-secondary shadow-xs'
-                      : 'text-outline hover:text-on-surface'
-                  }`}
-                >
-                  Java
-                </button>
-                <button
-                  onClick={() => setSelectedLanguage('python')}
-                  className={`px-2.5 py-1 rounded text-[11px] font-bold transition-colors ${
-                    selectedLanguage === 'python'
-                      ? 'bg-surface-container-lowest text-secondary shadow-xs'
-                      : 'text-outline hover:text-on-surface'
-                  }`}
-                >
-                  Python 3
-                </button>
+              <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-surface-container-low">
+                <span className="text-outline">CGPA Cutoff Clearance</span>
+                <span className="font-bold text-secondary">{profile.cgpa.toFixed(2)} / 10.0</span>
               </div>
-            </div>
-
-            <div className="flex items-center justify-between text-[11px] text-outline">
-              <span>{activeCodeProblem.complexity}</span>
-              <span className="text-secondary font-bold">{activeCodeProblem.difficulty}</span>
-            </div>
-
-            <textarea
-              value={customCode}
-              onChange={(e) => setCustomCode(e.target.value)}
-              spellCheck={false}
-              aria-label="Coding Blitz Editor"
-              className="w-full h-44 bg-[#091426] text-slate-100 border border-slate-800 p-3 rounded-xl font-mono text-[11px] leading-relaxed outline-none focus:ring-2 focus:ring-secondary resize-y"
-            />
-
-            {codeExecutionResult && (
-              <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-emerald-900 dark:text-emerald-300 text-xs font-mono">
-                {codeExecutionResult}
+              <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-surface-container-low">
+                <span className="text-outline">Backlog History</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                  {profile.activeBacklogs} Active (Clearance: Day-0 Tier 1)
+                </span>
               </div>
-            )}
-
-            <div className="flex items-center justify-between pt-2 border-t border-surface-container-low">
-              <span className="text-[11px] text-outline tabular-nums">
-                {activeCodeProblem.testCasesCount} Test Cases
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handleRunCode(false)}
-                  disabled={isRunningCode}
-                  className="px-3 py-1.5 rounded-lg border border-surface-container-high text-on-surface text-xs font-bold hover:bg-surface-container-low transition-colors whitespace-nowrap shrink-0"
-                >
-                  Run Tests
-                </button>
-                <button
-                  onClick={() => handleRunCode(true)}
-                  disabled={isRunningCode}
-                  className="px-3 py-1.5 rounded-lg bg-secondary text-on-secondary text-xs font-bold hover:bg-secondary-container transition-colors whitespace-nowrap shrink-0"
-                >
-                  {isRunningCode ? 'Checking...' : 'AI Judge'}
-                </button>
+              <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-surface-container-low">
+                <span className="text-outline">Target Career Role</span>
+                <span className="font-bold text-on-surface">{profile.targetRole}</span>
               </div>
             </div>
           </div>
 
-          {/* Card 3: Latest Diagnostic Benchmark Summary */}
-          <div className="bg-surface-container-lowest p-space-md rounded-2xl border border-surface-container-low flex items-center justify-between tabular-nums">
-            <div>
-              <span className="text-[11px] text-outline font-semibold block">
-                Latest Proctored Gate
+          {/* Card 3: AI Assistant Core Capabilities */}
+          <div className="bg-surface-container-lowest p-space-md rounded-2xl border border-surface-container-low space-y-3 shadow-xs">
+            <div className="flex items-center gap-2 pb-2 border-b border-surface-container-low">
+              <span className="material-symbols-outlined text-secondary text-[20px]">
+                verified_user
               </span>
-              <h4 className="font-headline-sm text-on-surface font-bold">
-                18 / 25 (72.0% Achieved)
-              </h4>
-              <span className="text-[11px] text-outline">
-                Accuracy: 84% · Time: 22m 14s
-              </span>
+              <h3 className="font-headline-sm text-on-surface font-bold">
+                AI Assistant Core Capabilities
+              </h3>
             </div>
-            <button
-              onClick={() =>
-                handleSendMessage('Give me a sectional breakdown and improvement plan for my 18/25 mock score.')
-              }
-              className="text-xs text-secondary font-bold hover:underline whitespace-nowrap shrink-0"
-            >
-              Ask AI Breakdown →
-            </button>
+
+            <div className="space-y-2.5 text-xs">
+              <div className="p-2.5 rounded-xl bg-surface-container-low border border-surface-container flex items-start gap-2.5">
+                <span className="text-lg">🎯</span>
+                <div>
+                  <h4 className="font-bold text-on-surface">Drive Eligibility Diagnostics</h4>
+                  <p className="text-[11px] text-on-surface-variant mt-0.5">
+                    Evaluates your academic criteria, branch restrictions, and backlog thresholds across all campus drives.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-surface-container-low border border-surface-container flex items-start gap-2.5">
+                <span className="text-lg">🧠</span>
+                <div>
+                  <h4 className="font-bold text-on-surface">Skill Gap &amp; Topic Prioritization</h4>
+                  <p className="text-[11px] text-on-surface-variant mt-0.5">
+                    Identifies missing concepts between your current dossier and specific company online assessment patterns.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-surface-container-low border border-surface-container flex items-start gap-2.5">
+                <span className="text-lg">🗣️</span>
+                <div>
+                  <h4 className="font-bold text-on-surface">STAR Behavioral &amp; HR Simulation</h4>
+                  <p className="text-[11px] text-on-surface-variant mt-0.5">
+                    Critiques and refines your Situation, Task, Action, Result answers for leadership and managerial rounds.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-surface-container-low border border-surface-container flex items-start gap-2.5">
+                <span className="text-lg">📅</span>
+                <div>
+                  <h4 className="font-bold text-on-surface">Personalized SDE Revision Timetable</h4>
+                  <p className="text-[11px] text-on-surface-variant mt-0.5">
+                    Generates day-by-day practice plans targeting high-weightage topics like Trees, Graphs, and DP.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -377,64 +377,24 @@ export const StudentLoginPage: React.FC<StudentLoginPageProps> = ({
                 <input type="password" name="prevent_autofill_student_pwd" tabIndex={-1} aria-hidden="true" className="hidden" style={{ display: 'none' }} />
 
                 {mode === 'register' && (
-                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                    <div className="sm:col-span-5">
-                      <label
-                        htmlFor="student-fullname-input"
-                        className="block font-semibold text-on-surface mb-1.5"
-                      >
-                        Full Name
-                      </label>
-                      <input
-                        id="student-fullname-input"
-                        name="student_fullname_input"
-                        type="text"
-                        required
-                        autoComplete="off"
-                        placeholder=""
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-surface-container-high bg-surface-container-low text-on-surface outline-none focus:border-secondary"
-                      />
-                    </div>
-                    <div className="sm:col-span-5">
-                      <label
-                        htmlFor="student-dept-select"
-                        className="block font-semibold text-on-surface mb-1.5"
-                      >
-                        Engineering Branch
-                      </label>
-                      <select
-                        id="student-dept-select"
-                        value={department}
-                        onChange={(e) => setDepartment(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-surface-container-high bg-surface-container-low text-on-surface font-semibold outline-none focus:border-secondary"
-                      >
-                        <option value="Computer Engg (CSE)">Computer Engg (CSE)</option>
-                        <option value="Information Tech (IT)">Information Tech (IT)</option>
-                        <option value="Electronics & Comm (ECE)">Electronics &amp; Comm (ECE)</option>
-                        <option value="Electrical Engg (EE)">Electrical Engg (EE)</option>
-                        <option value="Mechanical Engg (ME)">Mechanical Engg (ME)</option>
-                      </select>
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label
-                        htmlFor="student-cgpa-input"
-                        className="block font-semibold text-on-surface mb-1.5"
-                      >
-                        CGPA
-                      </label>
-                      <input
-                        id="student-cgpa-input"
-                        type="number"
-                        step="0.1"
-                        min="5"
-                        max="10"
-                        value={cgpa}
-                        onChange={(e) => setCgpa(e.target.value)}
-                        className="w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-surface-container-low text-on-surface font-mono tabular-nums outline-none focus:border-secondary"
-                      />
-                    </div>
+                  <div>
+                    <label
+                      htmlFor="student-fullname-input"
+                      className="block font-semibold text-on-surface mb-1.5"
+                    >
+                      Full Name
+                    </label>
+                    <input
+                      id="student-fullname-input"
+                      name="student_fullname_input"
+                      type="text"
+                      required
+                      autoComplete="off"
+                      placeholder="e.g. Aditya Sharma"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-surface-container-high bg-surface-container-low text-on-surface outline-none focus:border-secondary"
+                    />
                   </div>
                 )}
 
