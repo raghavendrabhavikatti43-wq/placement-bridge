@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
+import multer from 'multer';
 import { prisma, Prisma, toNumber } from '../../db/prisma.ts';
 import {
   getOrCreateStudentByFirebaseUid,
@@ -8,7 +9,7 @@ import {
 } from '../../db/users.ts';
 import { getCapabilityFlags } from '../config/env.ts';
 import { evaluateInterviewAnswerRubric } from '../engines/interviewRubric.ts';
-import { analyzeResumeDeterministically } from '../engines/resumeAnalyzer.ts';
+import { analyzeResumeDeterministically, extractResumeText } from '../engines/resumeAnalyzer.ts';
 import {
   generateAiInterviewFeedback,
   generateAiMockQuestionOrCodeReview,
@@ -1067,16 +1068,54 @@ legacyCompatRouter.post(
   })
 );
 
+const atsResumeUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024, files: 1 },
+});
+
 legacyCompatRouter.post(
   '/ai/ats-audit',
   optionalAuthenticate,
   aiRateLimiter,
+  atsResumeUpload.single('file'),
   asyncHandler(async (req: AuthenticatedRequest, res) => {
-    const { resumeText = '', targetCompany = 'Microsoft', targetRole = 'SDE-1' } = req.body || {};
+    let rawText = '';
+    let fileName: string | null = null;
+    let fileType: string | null = null;
+    let fileSize: number = 0;
+
+    if (req.file) {
+      fileName = req.file.originalname;
+      fileType = req.file.mimetype;
+      fileSize = req.file.size;
+      try {
+        rawText = await extractResumeText(req.file.buffer, req.file.mimetype);
+      } catch {
+        rawText = req.file.buffer.toString('utf8');
+      }
+    } else if (typeof req.body?.fileBase64 === 'string' && req.body.fileBase64.trim()) {
+      fileName = String(req.body.fileName || 'resume_upload');
+      fileType = String(req.body.fileMime || 'application/pdf');
+      try {
+        const cleanBase64 = req.body.fileBase64.replace(/^data:[^;]+;base64,/, '');
+        const buf = Buffer.from(cleanBase64, 'base64');
+        fileSize = buf.length;
+        rawText = await extractResumeText(buf, fileType);
+      } catch {
+        rawText = '';
+      }
+    }
+
+    if (!rawText && typeof req.body?.resumeText === 'string') {
+      rawText = req.body.resumeText.trim();
+    }
+
+    const targetCompany = String(req.body?.targetCompany || 'Microsoft');
+    const targetRole = String(req.body?.targetRole || 'SDE-1');
     const catalogueSkills = await loadAllSkillsCatalogue();
     const syntheticJd = `${targetCompany} ${targetRole} Java Python SQL Data Structures Algorithms System Design REST APIs Git`;
     const deterministic = analyzeResumeDeterministically(
-      String(resumeText || 'Engineering student skilled in Java, SQL, DSA, and web systems.'),
+      String(rawText || 'Engineering student skilled in Java, SQL, DSA, and web systems.'),
       catalogueSkills,
       syntheticJd
     );
@@ -1112,6 +1151,10 @@ legacyCompatRouter.post(
       formatting: fmtScore,
       matchedKeywords: deterministic.matchedKeywords,
       missingKeywords: deterministic.missingKeywords,
+      extractedText: rawText || (typeof req.body?.resumeText === 'string' ? req.body.resumeText : ''),
+      fileName,
+      fileType,
+      fileSize,
       optimizations: deterministic.suggestions.map((s) => ({
         title: s.type,
         detail: s.text,

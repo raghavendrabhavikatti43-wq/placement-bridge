@@ -32,12 +32,16 @@ const POLICIES: Record<UploadPurpose, PurposePolicy> = {
     allowedMimes: ['image/png', 'image/jpeg', 'image/webp'],
   },
   RESUME: {
-    maxBytes: 2 * 1024 * 1024,
-    allowedExts: ['.pdf', '.docx'],
+    maxBytes: 10 * 1024 * 1024,
+    allowedExts: ['.pdf', '.docx', '.png', '.jpg', '.jpeg', '.webp', '.txt'],
     allowedMimes: [
       'application/pdf',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'application/zip',
+      'image/png',
+      'image/jpeg',
+      'image/webp',
+      'text/plain',
     ],
   },
   CERTIFICATE: {
