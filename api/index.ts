@@ -5,6 +5,9 @@ const app = createApiApp();
 
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
   try {
+    if (req.url && !req.url.startsWith('/api')) {
+      req.url = '/api' + (req.url.startsWith('/') ? req.url : '/' + req.url);
+    }
     return app(req, res);
   } catch (err: unknown) {
     const error = err as Error;

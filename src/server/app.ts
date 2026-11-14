@@ -35,14 +35,6 @@ export function createApiApp() {
   app.use(express.json({ limit: '2mb' }));
   app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
-  // Normalize request URLs so routes match whether or not serverless rewrites strip the /api prefix
-  app.use((req, _res, next) => {
-    if (req.url && !req.url.startsWith('/api') && req.url !== '/') {
-      req.url = '/api' + (req.url.startsWith('/') ? req.url : '/' + req.url);
-    }
-    next();
-  });
-
   app.use('/api', (_req, res, next) => {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     next();
@@ -53,7 +45,7 @@ export function createApiApp() {
   // ==========================================================================
   // 1. HEALTH & CAPABILITIES ENDPOINT (Part F1 — Neon PostgreSQL via Prisma)
   // ==========================================================================
-  app.get(['/', '/api', '/api/health', '/api/v1/health'], async (_req, res) => {
+  app.get(['/api/health', '/api/v1/health', '/api'], async (_req, res) => {
     let dbHealthy = false;
     try {
       await prisma.$queryRaw`SELECT 1`;
