@@ -98,6 +98,8 @@ export function createApiApp() {
   app.use('/api/v1', companiesRouter);
   app.use('/api/v1', prepRouter);
   app.use('/api/v1', practiceRouter);
+  app.use('/api/v1/practice', practiceRouter);
+  app.use('/api/practice', practiceRouter);
   app.use('/api/v1', resumeAiRouter);
   app.use('/api/v1', progressRouter);
   app.use('/api/v1/admin', adminRouter);

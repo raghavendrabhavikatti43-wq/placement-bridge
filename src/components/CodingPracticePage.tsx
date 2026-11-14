@@ -232,7 +232,7 @@ export const CodingPracticePage: React.FC<CodingPracticePageProps> = ({
     }
 
     try {
-      const res = await fetch(`/api/v1/practice/coding/problems/${problem.id}/run`, {
+      const res = await fetch(`/api/v1/coding/problems/${problem.id}/run`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -246,39 +246,50 @@ export const CodingPracticePage: React.FC<CodingPracticePageProps> = ({
         const data = await res.json();
         setVerdict(data.data);
       } else {
-        // Fallback execution feedback
-        const sampleCase: TestResultItem = {
-          testCaseId: 'sample-1',
-          input: useCustomInput && customInputValue ? customInputValue : problem.sampleInput,
-          expectedOutput: problem.sampleOutput,
-          actualOutput: problem.sampleOutput,
-          passed: true,
-          runtimeMs: 14,
-        };
-        setVerdict({
-          status: 'ACCEPTED',
-          passed: true,
-          totalCases: 1,
-          passedCases: 1,
-          testResults: [sampleCase],
-        });
+        const errData = await res.json().catch(() => null);
+        if (errData?.data && typeof errData.data === 'object' && errData.data.status) {
+          setVerdict(errData.data);
+        } else {
+          const isStarter = activeCode.trim() === getStarterCode(problem, language).trim();
+          setVerdict({
+            status: isStarter ? 'WRONG_ANSWER' : 'RUNTIME_ERROR',
+            passed: false,
+            totalCases: 1,
+            passedCases: 0,
+            compileError: null,
+            runtimeError: errData?.message || (isStarter ? 'Starter boilerplate code does not solve the problem.' : 'Execution failed.'),
+            testResults: [
+              {
+                testCaseId: 'case-1',
+                input: useCustomInput && customInputValue ? customInputValue : problem.sampleInput,
+                expectedOutput: problem.sampleOutput,
+                actualOutput: isStarter ? '-1' : 'Execution Error',
+                passed: false,
+                runtimeMs: 14,
+              },
+            ],
+          });
+        }
       }
-    } catch {
-      // Local graceful fallback
-      const sampleCase: TestResultItem = {
-        testCaseId: 'sample-1',
-        input: useCustomInput && customInputValue ? customInputValue : problem.sampleInput,
-        expectedOutput: problem.sampleOutput,
-        actualOutput: problem.sampleOutput,
-        passed: true,
-        runtimeMs: 16,
-      };
+    } catch (err: any) {
+      const isStarter = activeCode.trim() === getStarterCode(problem, language).trim();
       setVerdict({
-        status: 'ACCEPTED',
-        passed: true,
+        status: isStarter ? 'WRONG_ANSWER' : 'RUNTIME_ERROR',
+        passed: false,
         totalCases: 1,
-        passedCases: 1,
-        testResults: [sampleCase],
+        passedCases: 0,
+        compileError: null,
+        runtimeError: isStarter ? 'Starter boilerplate code does not solve the problem.' : (err?.message || 'Failed to reach execution service.'),
+        testResults: [
+          {
+            testCaseId: 'case-1',
+            input: useCustomInput && customInputValue ? customInputValue : problem.sampleInput,
+            expectedOutput: problem.sampleOutput,
+            actualOutput: isStarter ? '-1' : 'No Output',
+            passed: false,
+            runtimeMs: 16,
+          },
+        ],
       });
     } finally {
       setIsRunning(false);
@@ -308,7 +319,7 @@ export const CodingPracticePage: React.FC<CodingPracticePageProps> = ({
     }
 
     try {
-      const res = await fetch(`/api/v1/practice/coding/problems/${problem.id}/submissions`, {
+      const res = await fetch(`/api/v1/coding/problems/${problem.id}/submissions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -319,59 +330,64 @@ export const CodingPracticePage: React.FC<CodingPracticePageProps> = ({
 
       if (res.ok) {
         const data = await res.json();
-        const v: ExecutionVerdict = data.data.verdict || {
-          status: data.data.submission.status === 'PASSED' ? 'ACCEPTED' : 'WRONG_ANSWER',
-          passed: data.data.submission.status === 'PASSED',
+        const v: ExecutionVerdict = data.data?.verdict || {
+          status: data.data?.submission?.status === 'PASSED' ? 'ACCEPTED' : 'WRONG_ANSWER',
+          passed: data.data?.submission?.status === 'PASSED',
           totalCases: problem.testCasesCount,
-          passedCases: data.data.submission.testsPassed || problem.testCasesCount,
+          passedCases: data.data?.submission?.testsPassed || 0,
           testResults: [],
         };
         setVerdict(v);
-        if (v.passed) {
+        if (v.passed && v.status === 'ACCEPTED') {
           onMarkSolved(problem.id);
           setSubmissionSuccessModal(true);
         }
       } else {
-        // Fallback submission evaluation
-        setVerdict({
-          status: 'ACCEPTED',
-          passed: true,
-          totalCases: problem.testCasesCount,
-          passedCases: problem.testCasesCount,
-          testResults: [
-            {
-              testCaseId: 'all-suites',
-              input: problem.sampleInput,
-              expectedOutput: problem.sampleOutput,
-              actualOutput: problem.sampleOutput,
-              passed: true,
-              runtimeMs: 22,
-            },
-          ],
-        });
-        onMarkSolved(problem.id);
-        setSubmissionSuccessModal(true);
+        const errData = await res.json().catch(() => null);
+        if (errData?.data && typeof errData.data === 'object' && errData.data.status) {
+          setVerdict(errData.data);
+        } else {
+          const isStarter = activeCode.trim() === getStarterCode(problem, language).trim();
+          setVerdict({
+            status: isStarter ? 'WRONG_ANSWER' : 'RUNTIME_ERROR',
+            passed: false,
+            totalCases: problem.testCasesCount,
+            passedCases: 0,
+            compileError: null,
+            runtimeError: errData?.message || (isStarter ? 'Starter template submitted without algorithm implementation.' : 'Submission verification failed.'),
+            testResults: [
+              {
+                testCaseId: 'case-1',
+                input: problem.sampleInput,
+                expectedOutput: problem.sampleOutput,
+                actualOutput: isStarter ? '-1' : 'Error',
+                passed: false,
+                runtimeMs: 18,
+              },
+            ],
+          });
+        }
       }
-    } catch {
-      // Local fallback
+    } catch (err: any) {
+      const isStarter = activeCode.trim() === getStarterCode(problem, language).trim();
       setVerdict({
-        status: 'ACCEPTED',
-        passed: true,
+        status: isStarter ? 'WRONG_ANSWER' : 'RUNTIME_ERROR',
+        passed: false,
         totalCases: problem.testCasesCount,
-        passedCases: problem.testCasesCount,
+        passedCases: 0,
+        compileError: null,
+        runtimeError: isStarter ? 'Starter template submitted without algorithm implementation.' : (err?.message || 'Network error during submission.'),
         testResults: [
           {
-            testCaseId: 'suite-passed',
+            testCaseId: 'case-1',
             input: problem.sampleInput,
             expectedOutput: problem.sampleOutput,
-            actualOutput: problem.sampleOutput,
-            passed: true,
+            actualOutput: isStarter ? '-1' : 'Error',
+            passed: false,
             runtimeMs: 18,
           },
         ],
       });
-      onMarkSolved(problem.id);
-      setSubmissionSuccessModal(true);
     } finally {
       setIsSubmitting(false);
     }

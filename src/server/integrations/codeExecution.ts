@@ -418,6 +418,409 @@ except Exception as e:
 }
 
 /**
+ * Format JS value into Java literal expression.
+ */
+function formatJavaLiteral(val: any): string {
+  if (val === null || val === undefined) return 'null';
+  if (typeof val === 'boolean') return val ? 'true' : 'false';
+  if (typeof val === 'number') return String(val);
+  if (typeof val === 'string') return JSON.stringify(val);
+  if (Array.isArray(val)) {
+    if (val.length === 0) return 'new int[]{}';
+    if (Array.isArray(val[0])) {
+      return `new int[][]{${val.map((row) => `new int[]{${row.join(',')}}`).join(',')}}`;
+    }
+    if (typeof val[0] === 'number') {
+      return `new int[]{${val.join(',')}}`;
+    }
+    if (typeof val[0] === 'string') {
+      return `new String[]{${val.map((s) => JSON.stringify(s)).join(',')}}`;
+    }
+  }
+  return String(val);
+}
+
+/**
+ * Generate Main.java harness for the problem and input.
+ */
+function generateJavaHarness(problemSlug: string, testInput: any): string {
+  let callExpr = '';
+
+  switch (problemSlug) {
+    case 'second-largest': {
+      const arrLiteral = formatJavaLiteral(testInput);
+      callExpr = `
+        int[] arr = ${arrLiteral};
+        int res = new Solution().getSecondLargest(arr);
+        System.out.println("__PB_RES__" + res);
+      `;
+      break;
+    }
+    case 'longest-unique-substring': {
+      const sLiteral = typeof testInput === 'string' ? JSON.stringify(testInput) : JSON.stringify(String(testInput));
+      callExpr = `
+        String s = ${sLiteral};
+        int res = new Solution().lengthOfLongestSubstring(s);
+        System.out.println("__PB_RES__" + res);
+      `;
+      break;
+    }
+    case 'merge-intervals': {
+      const intervalsLiteral = formatJavaLiteral(testInput);
+      callExpr = `
+        int[][] intervals = ${intervalsLiteral};
+        int[][] res = new Solution().merge(intervals);
+        System.out.println("__PB_RES__" + Arrays.deepToString(res));
+      `;
+      break;
+    }
+    case 'next-greater-element-ii': {
+      const numsLiteral = formatJavaLiteral(testInput);
+      callExpr = `
+        int[] nums = ${numsLiteral};
+        int[] res = new Solution().nextGreaterElements(nums);
+        System.out.println("__PB_RES__" + Arrays.toString(res));
+      `;
+      break;
+    }
+    case '0-1-knapsack': {
+      const W = testInput?.W ?? 50;
+      const weights = formatJavaLiteral(testInput?.weights ?? [10, 20, 30]);
+      const values = formatJavaLiteral(testInput?.values ?? [60, 100, 120]);
+      callExpr = `
+        int W = ${W};
+        int[] weights = ${weights};
+        int[] values = ${values};
+        int res = new Solution().knapSack(W, weights, values);
+        System.out.println("__PB_RES__" + res);
+      `;
+      break;
+    }
+    case 'course-schedule': {
+      const numCourses = testInput?.numCourses ?? 2;
+      const prereqs = formatJavaLiteral(testInput?.prerequisites ?? [[1, 0]]);
+      callExpr = `
+        int numCourses = ${numCourses};
+        int[][] prereqs = ${prereqs};
+        boolean res = new Solution().canFinish(numCourses, prereqs);
+        System.out.println("__PB_RES__" + res);
+      `;
+      break;
+    }
+    case 'trapping-rain-water': {
+      const heightLiteral = formatJavaLiteral(testInput);
+      callExpr = `
+        int[] height = ${heightLiteral};
+        int res = new Solution().trap(height);
+        System.out.println("__PB_RES__" + res);
+      `;
+      break;
+    }
+    default: {
+      callExpr = `
+        Solution sol = new Solution();
+        java.lang.reflect.Method target = null;
+        for (java.lang.reflect.Method m : Solution.class.getDeclaredMethods()) {
+            if (java.lang.reflect.Modifier.isPublic(m.getModifiers()) && !m.isSynthetic()) {
+                target = m;
+                break;
+            }
+        }
+        if (target != null) {
+            Object res = target.invoke(sol, (Object[])null);
+            System.out.println("__PB_RES__" + res);
+        } else {
+            System.out.println("__PB_RES__null");
+        }
+      `;
+    }
+  }
+
+  return `
+import java.io.*;
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) {
+        try {
+            ${callExpr}
+        } catch (Throwable t) {
+            t.printStackTrace(System.err);
+            System.exit(1);
+        }
+    }
+}
+`;
+}
+
+/**
+ * Execute Java solution with real compilation and test execution.
+ */
+function executeJava(
+  sourceCode: string,
+  problemSlug: string,
+  testInput: any
+): { output: any; stdout: string; error?: string; timeMs: number; isCompileError?: boolean } {
+  const start = performance.now();
+  const tmpDir = getTmpExecDir();
+  const runId = `run_java_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  const folder = path.join(tmpDir, runId);
+
+  try {
+    fs.mkdirSync(folder, { recursive: true });
+
+    let fullSource = sourceCode;
+    if (!fullSource.includes('import java.util')) {
+      fullSource = 'import java.util.*;\nimport java.io.*;\n' + fullSource;
+    }
+
+    fs.writeFileSync(path.join(folder, 'Solution.java'), fullSource, 'utf8');
+    fs.writeFileSync(path.join(folder, 'Main.java'), generateJavaHarness(problemSlug, testInput), 'utf8');
+
+    const javac = getJavacPath();
+    const compileRes = spawnSync(javac, ['Solution.java', 'Main.java'], {
+      cwd: folder,
+      encoding: 'utf8',
+      timeout: 7000,
+    });
+
+    if (compileRes.error || compileRes.status !== 0) {
+      const err = (compileRes.stderr || compileRes.stdout || 'Compilation error').trim();
+      return {
+        output: null,
+        stdout: '',
+        error: err,
+        timeMs: Math.round(performance.now() - start),
+        isCompileError: true,
+      };
+    }
+
+    const java = getJavaPath();
+    const runRes = spawnSync(java, ['-cp', '.', 'Main'], {
+      cwd: folder,
+      encoding: 'utf8',
+      timeout: 4000,
+    });
+
+    const elapsed = Math.round(performance.now() - start);
+
+    if (runRes.error) {
+      return {
+        output: null,
+        stdout: '',
+        error: runRes.error.message,
+        timeMs: elapsed,
+      };
+    }
+
+    if (runRes.status !== 0) {
+      return {
+        output: null,
+        stdout: runRes.stdout || '',
+        error: (runRes.stderr || 'Runtime error').trim(),
+        timeMs: elapsed,
+      };
+    }
+
+    const out = runRes.stdout || '';
+    let outputVal = out.trim();
+    const match = out.match(/__PB_RES__(.+)/);
+    if (match) {
+      try {
+        outputVal = JSON.parse(match[1].trim());
+      } catch {
+        outputVal = match[1].trim();
+      }
+    }
+    const cleanStdout = out.replace(/__PB_RES__.*$/, '').trim();
+
+    return {
+      output: outputVal,
+      stdout: cleanStdout,
+      timeMs: elapsed,
+    };
+  } catch (err: any) {
+    return {
+      output: null,
+      stdout: '',
+      error: err.message || 'Execution error',
+      timeMs: Math.round(performance.now() - start),
+    };
+  } finally {
+    try {
+      fs.rmSync(folder, { recursive: true, force: true });
+    } catch {}
+  }
+}
+
+/**
+ * Execute Java test suite in a single batch compilation and execution.
+ */
+function executeJavaSuite(
+  sourceCode: string,
+  problemSlug: string,
+  testCases: ProblemTestCaseItem[]
+): {
+  isCompileError?: boolean;
+  compileError?: string;
+  results: { output: any; stdout: string; error?: string; timeMs: number }[];
+} {
+  const tmpDir = getTmpExecDir();
+  const runId = `suite_java_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  const folder = path.join(tmpDir, runId);
+
+  try {
+    fs.mkdirSync(folder, { recursive: true });
+
+    let fullSource = sourceCode;
+    if (!fullSource.includes('import java.util')) {
+      fullSource = 'import java.util.*;\nimport java.io.*;\n' + fullSource;
+    }
+
+    fs.writeFileSync(path.join(folder, 'Solution.java'), fullSource, 'utf8');
+
+    // Build batch Main.java
+    let harnessCases = '';
+    testCases.forEach((tc, idx) => {
+      const parsedIn = parseTestInput(tc.input);
+      let callLine = '';
+      switch (problemSlug) {
+        case 'second-largest':
+          callLine = `int res = sol.getSecondLargest(${formatJavaLiteral(parsedIn)}); System.out.println("__PB_RES_${idx}__" + res);`;
+          break;
+        case 'longest-unique-substring':
+          callLine = `int res = sol.lengthOfLongestSubstring(${JSON.stringify(String(parsedIn))}); System.out.println("__PB_RES_${idx}__" + res);`;
+          break;
+        case 'merge-intervals':
+          callLine = `int[][] res = sol.merge(${formatJavaLiteral(parsedIn)}); System.out.println("__PB_RES_${idx}__" + Arrays.deepToString(res));`;
+          break;
+        case 'next-greater-element-ii':
+          callLine = `int[] res = sol.nextGreaterElements(${formatJavaLiteral(parsedIn)}); System.out.println("__PB_RES_${idx}__" + Arrays.toString(res));`;
+          break;
+        case '0-1-knapsack': {
+          const W = parsedIn?.W ?? 50;
+          const w = formatJavaLiteral(parsedIn?.weights ?? [10, 20, 30]);
+          const v = formatJavaLiteral(parsedIn?.values ?? [60, 100, 120]);
+          callLine = `int res = sol.knapSack(${W}, ${w}, ${v}); System.out.println("__PB_RES_${idx}__" + res);`;
+          break;
+        }
+        case 'course-schedule': {
+          const num = parsedIn?.numCourses ?? 2;
+          const pre = formatJavaLiteral(parsedIn?.prerequisites ?? [[1, 0]]);
+          callLine = `boolean res = sol.canFinish(${num}, ${pre}); System.out.println("__PB_RES_${idx}__" + res);`;
+          break;
+        }
+        case 'trapping-rain-water':
+          callLine = `int res = sol.trap(${formatJavaLiteral(parsedIn)}); System.out.println("__PB_RES_${idx}__" + res);`;
+          break;
+        default:
+          callLine = `System.out.println("__PB_RES_${idx}__null");`;
+          break;
+      }
+
+      harnessCases += `
+        try {
+            ${callLine}
+        } catch (Throwable t) {
+            System.out.println("__PB_ERR_${idx}__" + t.toString());
+        }
+      `;
+    });
+
+    const mainCode = `
+import java.io.*;
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) {
+        Solution sol = new Solution();
+        ${harnessCases}
+    }
+}
+`;
+    fs.writeFileSync(path.join(folder, 'Main.java'), mainCode, 'utf8');
+
+    const javac = getJavacPath();
+    const compileRes = spawnSync(javac, ['Solution.java', 'Main.java'], {
+      cwd: folder,
+      encoding: 'utf8',
+      timeout: 8000,
+    });
+
+    if (compileRes.error || compileRes.status !== 0) {
+      const err = (compileRes.stderr || compileRes.stdout || 'Compilation error').trim();
+      return {
+        isCompileError: true,
+        compileError: err,
+        results: [],
+      };
+    }
+
+    const java = getJavaPath();
+    const runStart = performance.now();
+    const runRes = spawnSync(java, ['-cp', '.', 'Main'], {
+      cwd: folder,
+      encoding: 'utf8',
+      timeout: 5000,
+    });
+    const runElapsed = Math.round(performance.now() - runStart);
+
+    const out = runRes.stdout || '';
+    const errOut = runRes.stderr || '';
+
+    const results = testCases.map((_, idx) => {
+      const resMatch = out.match(new RegExp(`__PB_RES_${idx}__(.+)`));
+      const errMatch = out.match(new RegExp(`__PB_ERR_${idx}__(.+)`));
+
+      if (errMatch) {
+        return {
+          output: null,
+          stdout: '',
+          error: errMatch[1].trim(),
+          timeMs: Math.round(runElapsed / testCases.length),
+        };
+      }
+      if (resMatch) {
+        let val: any = resMatch[1].trim();
+        try {
+          val = JSON.parse(val);
+        } catch {}
+        return {
+          output: val,
+          stdout: '',
+          timeMs: Math.round(runElapsed / testCases.length),
+        };
+      }
+      return {
+        output: null,
+        stdout: '',
+        error: errOut || 'Execution did not complete',
+        timeMs: Math.round(runElapsed / testCases.length),
+      };
+    });
+
+    return {
+      results,
+    };
+  } catch (err: any) {
+    return {
+      isCompileError: false,
+      compileError: err.message,
+      results: testCases.map(() => ({
+        output: null,
+        stdout: '',
+        error: err.message,
+        timeMs: 0,
+      })),
+    };
+  } finally {
+    try {
+      fs.rmSync(folder, { recursive: true, force: true });
+    } catch {}
+  }
+}
+
+/**
  * Main function: Runs code against given test cases with real compiler/runner feedback.
  */
 export async function runProblemCode(input: {
@@ -457,45 +860,95 @@ export async function runProblemCode(input: {
   let passedCases = 0;
   let hasRuntimeError = false;
   let runtimeErrorMsg: string | null = null;
+  const lang = languageKey.toLowerCase();
 
-  for (const tc of casesToRun) {
-    const parsedIn = parseTestInput(tc.input);
-    const lang = languageKey.toLowerCase();
-
-    let execResult: { output: any; stdout: string; error?: string; timeMs: number };
-
-    if (lang.includes('python') || lang === 'py') {
-      execResult = executePython(sourceCode, problemSlug, parsedIn);
-    } else {
-      // Default to JavaScript sandbox runner (can also run translated logic)
-      execResult = executeJavaScript(sourceCode, problemSlug, parsedIn);
+  // Optimized batch runner for Java
+  if (lang.includes('java')) {
+    const suiteRes = executeJavaSuite(sourceCode, problemSlug, casesToRun);
+    if (suiteRes.isCompileError) {
+      return {
+        status: 'COMPILATION_ERROR',
+        passed: false,
+        totalCases: casesToRun.length,
+        passedCases: 0,
+        compileError: suiteRes.compileError || 'Compilation Error',
+        runtimeError: null,
+        testResults: [],
+      };
     }
 
-    if (execResult.error) {
-      hasRuntimeError = true;
-      runtimeErrorMsg = execResult.error;
-    }
+    casesToRun.forEach((tc, idx) => {
+      const exec = suiteRes.results[idx] || { output: null, stdout: '', error: 'No result', timeMs: 0 };
+      if (exec.error) {
+        hasRuntimeError = true;
+        runtimeErrorMsg = exec.error;
+      }
+      const actualNormalized = normalizeOutput(exec.output);
+      const expectedNormalized = normalizeOutput(tc.expectedOutput);
+      const isPassed = customInput ? !exec.error : !exec.error && actualNormalized === expectedNormalized;
+      if (isPassed) passedCases++;
 
-    const actualNormalized = normalizeOutput(execResult.output);
-    const expectedNormalized = normalizeOutput(tc.expectedOutput);
-
-    // If custom input, passed is true if no runtime error
-    const isPassed = customInput
-      ? !execResult.error
-      : !execResult.error && actualNormalized === expectedNormalized;
-
-    if (isPassed) passedCases++;
-
-    results.push({
-      testCaseId: tc.id,
-      input: tc.input,
-      expectedOutput: tc.expectedOutput,
-      actualOutput: execResult.error ? `Error: ${execResult.error}` : actualNormalized,
-      passed: isPassed,
-      runtimeMs: execResult.timeMs,
-      stdout: execResult.stdout,
-      stderr: execResult.error,
+      results.push({
+        testCaseId: tc.id,
+        input: tc.input,
+        expectedOutput: tc.expectedOutput,
+        actualOutput: exec.error ? `Error: ${exec.error}` : actualNormalized,
+        passed: isPassed,
+        runtimeMs: exec.timeMs,
+        stdout: exec.stdout,
+        stderr: exec.error,
+      });
     });
+  } else {
+    for (const tc of casesToRun) {
+      const parsedIn = parseTestInput(tc.input);
+
+      let execResult: { output: any; stdout: string; error?: string; timeMs: number; isCompileError?: boolean };
+
+      if (lang.includes('python') || lang === 'py') {
+        execResult = executePython(sourceCode, problemSlug, parsedIn);
+      } else {
+        // Default to JavaScript sandbox runner (can also run translated logic)
+        execResult = executeJavaScript(sourceCode, problemSlug, parsedIn);
+      }
+
+      if (execResult.isCompileError) {
+        return {
+          status: 'COMPILATION_ERROR',
+          passed: false,
+          totalCases: casesToRun.length,
+          passedCases: 0,
+          compileError: execResult.error || 'Compilation Error',
+          runtimeError: null,
+          testResults: [],
+        };
+      }
+
+      if (execResult.error) {
+        hasRuntimeError = true;
+        runtimeErrorMsg = execResult.error;
+      }
+
+      const actualNormalized = normalizeOutput(execResult.output);
+      const expectedNormalized = normalizeOutput(tc.expectedOutput);
+
+      const isPassed = customInput
+        ? !execResult.error
+        : !execResult.error && actualNormalized === expectedNormalized;
+
+      if (isPassed) passedCases++;
+
+      results.push({
+        testCaseId: tc.id,
+        input: tc.input,
+        expectedOutput: tc.expectedOutput,
+        actualOutput: execResult.error ? `Error: ${execResult.error}` : actualNormalized,
+        passed: isPassed,
+        runtimeMs: execResult.timeMs,
+        stdout: execResult.stdout,
+        stderr: execResult.error,
+      });
+    }
   }
 
   let finalStatus: ProblemExecutionVerdict['status'] = 'ACCEPTED';
