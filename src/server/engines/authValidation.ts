@@ -4,12 +4,14 @@ export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const loginValidationSchema = z.object({
   email: z
-    .string({ required_error: 'Email is required' })
+    .string()
     .trim()
+    .min(1, { message: 'Email is required' })
     .email({ message: 'Please enter a valid email address' })
     .max(180),
   password: z
-    .string({ required_error: 'Password is required' })
+    .string()
+    .min(1, { message: 'Password is required' })
     .min(6, { message: 'Password must be at least 6 characters long' })
     .max(128),
 });

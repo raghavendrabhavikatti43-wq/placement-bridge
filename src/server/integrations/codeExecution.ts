@@ -266,8 +266,8 @@ function executeJavaScript(
 
   try {
     // Run user code inside context
-    const script = new vm.Script(sourceCode, { timeout: 2500 });
-    script.runInContext(context);
+    const script = new vm.Script(sourceCode);
+    script.runInContext(context, { timeout: 2500 });
 
     // Call corresponding function based on problem
     let fn: any = null;
@@ -713,6 +713,33 @@ function executeJavaSuite(
         case 'trapping-rain-water':
           callLine = `int res = sol.trap(${formatJavaLiteral(parsedIn)}); System.out.println("__PB_RES_${idx}__" + res);`;
           break;
+        case 'solve-me-first': {
+          const a = parsedIn?.a ?? 2;
+          const b = parsedIn?.b ?? 3;
+          callLine = `int res = sol.solveMeFirst(${a}, ${b}); System.out.println("__PB_RES_${idx}__" + res);`;
+          break;
+        }
+        case 'simple-array-sum':
+          callLine = `int res = sol.simpleArraySum(${formatJavaLiteral(parsedIn)}); System.out.println("__PB_RES_${idx}__" + res);`;
+          break;
+        case 'compare-the-triplets': {
+          const a = formatJavaLiteral(parsedIn?.a ?? [5, 6, 7]);
+          const b = formatJavaLiteral(parsedIn?.b ?? [3, 6, 10]);
+          callLine = `int[] res = sol.compareTriplets(${a}, ${b}); System.out.println("__PB_RES_${idx}__" + Arrays.toString(res));`;
+          break;
+        }
+        case 'birthday-cake-candles':
+          callLine = `int res = sol.birthdayCakeCandles(${formatJavaLiteral(parsedIn)}); System.out.println("__PB_RES_${idx}__" + res);`;
+          break;
+        case 'sql-select-all':
+          callLine = `String res = sol.executeQuery(); System.out.println("__PB_RES_${idx}__" + res);`;
+          break;
+        case 'react-counter-component': {
+          const cur = parsedIn?.current ?? 5;
+          const act = JSON.stringify(parsedIn?.action ?? 'DECREMENT');
+          callLine = `int res = sol.updateCount(${cur}, ${act}); System.out.println("__PB_RES_${idx}__" + res);`;
+          break;
+        }
         default:
           callLine = `System.out.println("__PB_RES_${idx}__null");`;
           break;

@@ -47,13 +47,167 @@ const CATEGORIES = [
   'Dynamic Programming',
 ] as const;
 
+interface SkillTrackDef {
+  id: string;
+  name: string;
+  icon: string;
+  badge?: string;
+  description: string;
+  subdomains: string[];
+  filter: (prob: CodingProblem) => boolean;
+}
+
+const PRACTICE_SKILLS: SkillTrackDef[] = [
+  {
+    id: 'algorithms',
+    name: 'Algorithms',
+    icon: 'schema',
+    description: 'Dynamic programming, graphs, sorting, searching, recursion and two-pointer paradigms.',
+    subdomains: ['All', 'Warmup', 'Arrays', 'Strings', 'Sorting', 'Search', 'Dynamic Programming', 'Graph Theory', 'Greedy', 'Bit Manipulation'],
+    filter: (p) => p.topic.includes('Arrays') || p.topic.includes('Sliding') || p.topic.includes('DP') || p.topic.includes('Graph') || p.topic.includes('Two Pointers') || p.topic.includes('Sorting') || p.topic.includes('Warmup') || p.topic.includes('Arithmetic'),
+  },
+  {
+    id: 'data-structures',
+    name: 'Data Structures',
+    icon: 'lan',
+    description: 'Arrays, Linked Lists, Trees, Stacks, Queues, Graphs, and Heaps mastery.',
+    subdomains: ['All', 'Arrays', 'Linked Lists', 'Stacks & Queues', 'Trees', 'Graphs', 'Heaps', 'Hashing'],
+    filter: (p) => p.topic.includes('Arrays') || p.topic.includes('Stack') || p.topic.includes('Tree') || p.topic.includes('Graph') || p.topic.includes('Hashing') || p.topic.includes('Linked List') || p.topic.includes('Warmup'),
+  },
+  {
+    id: 'mathematics',
+    name: 'Mathematics',
+    icon: 'functions',
+    description: 'Number theory, combinatorics, modular arithmetic, probability and geometry.',
+    subdomains: ['All', 'Warmup', 'Fundamentals', 'Number Theory', 'Combinatorics', 'Geometry'],
+    filter: (p) => p.topic.includes('Math') || p.topic.includes('DP') || p.topic.includes('Single Pass') || p.topic.includes('Warmup') || p.topic.includes('Arithmetic'),
+  },
+  {
+    id: 'ai',
+    name: 'Artificial Intelligence',
+    icon: 'psychology',
+    description: 'Search agents, heuristic pathfinding, minimax games, NLP, and bot challenges.',
+    subdomains: ['All', 'Bot Building', 'Search', 'Graph Traversal', 'Reinforcement'],
+    filter: (p) => p.topic.includes('Graph') || p.topic.includes('AI') || p.topic.includes('Search') || p.topic.includes('Cycle') || p.topic.includes('DP'),
+  },
+  {
+    id: 'c',
+    name: 'C',
+    icon: 'code',
+    badge: 'C',
+    description: 'Pointers, memory management, arrays, strings, struct memory layout and systems basics.',
+    subdomains: ['All', 'Warmup', 'Arrays & Strings', 'Functions', 'Pointers'],
+    filter: (p) => Boolean(p.cCode) || p.topic.includes('Arrays') || p.topic.includes('Warmup'),
+  },
+  {
+    id: 'cpp',
+    name: 'C++',
+    icon: 'code_blocks',
+    badge: 'C++',
+    description: 'Modern C++ 20, STL vectors, maps, memory allocators, templates, and algorithms.',
+    subdomains: ['All', 'Warmup', 'STL', 'Classes', 'Inheritance', 'Algorithms'],
+    filter: (p) => Boolean(p.cppCode),
+  },
+  {
+    id: 'java',
+    name: 'Java',
+    icon: 'local_cafe',
+    badge: 'Java',
+    description: 'Core Java 21, OOP principles, Collections framework, Generics, and exception handling.',
+    subdomains: ['All', 'Warmup', 'Object Oriented', 'Collections & Generics', 'Data Structures', 'Advanced'],
+    filter: (p) => Boolean(p.javaCode),
+  },
+  {
+    id: 'python',
+    name: 'Python',
+    icon: 'terminal',
+    badge: 'Py',
+    description: 'Idiomatic Python 3, list comprehensions, lambdas, generators, math, and data handling.',
+    subdomains: ['All', 'Warmup', 'Basic Data Types', 'Strings', 'Sets & Dicts', 'Itertools'],
+    filter: (p) => Boolean(p.pythonCode),
+  },
+  {
+    id: 'ruby',
+    name: 'Ruby',
+    icon: 'diamond',
+    badge: 'Ruby',
+    description: 'Blocks, procs, mixins, symbols, hashes, enumerable methods, and object-oriented elegance.',
+    subdomains: ['All', 'Warmup', 'Control Structures', 'Arrays & Hashes', 'Methods', 'Strings'],
+    filter: (p) => p.topic.includes('Strings') || p.topic.includes('Arrays') || p.topic.includes('Warmup'),
+  },
+  {
+    id: 'sql',
+    name: 'SQL',
+    icon: 'database',
+    badge: 'SQL',
+    description: 'Relational queries, window functions, JOINs, indexing, aggregation, and performance tuning.',
+    subdomains: ['All', 'Basic Select', 'Advanced Select', 'Aggregation', 'Basic Join', 'Advanced Join'],
+    filter: (p) => p.topic.includes('Select') || p.topic.includes('SQL') || p.topic.includes('Database') || p.topic.includes('Hashing'),
+  },
+  {
+    id: 'react',
+    name: 'React',
+    icon: 'deployed_code',
+    badge: 'React',
+    description: 'Component architecture, state, effect hooks, performance optimization, and UI state flows.',
+    subdomains: ['All', 'Components', 'State & Hooks', 'Routing', 'Context & Performance'],
+    filter: (p) => p.topic.includes('Component') || p.topic.includes('React') || p.topic.includes('Frontend') || p.topic.includes('State'),
+  },
+];
+
+interface MockInterviewTrack {
+  id: string;
+  title: string;
+  duration: string;
+  description: string;
+  isLocked: boolean;
+}
+
+const MOCK_INTERVIEWS: MockInterviewTrack[] = [
+  {
+    id: 'tech-screen',
+    title: 'Technical Screen',
+    duration: '30 mins',
+    description: 'Practice a recruiter screening to identify gaps in CS fundamentals, role fit, and interview readiness.',
+    isLocked: true,
+  },
+  {
+    id: 'coding-screen',
+    title: 'Coding',
+    duration: '60 mins',
+    description: 'Solve algorithmic and data structure problems designed to test your problem-solving skills.',
+    isLocked: true,
+  },
+  {
+    id: 'system-design',
+    title: 'System Design',
+    duration: '60 mins',
+    description: 'Improve your ability to design scalable systems and clearly justify architectural decisions.',
+    isLocked: true,
+  },
+  {
+    id: 'ai-fluency',
+    title: 'AI Fluency',
+    duration: '30 mins',
+    description: 'Demonstrate your ability to build with AI and use AI tools to solve problems and improve your workflow.',
+    isLocked: true,
+  },
+];
+
 export const CodingPracticePage: React.FC<CodingPracticePageProps> = ({
   solvedIds,
   onMarkSolved,
   onNavigate,
 }) => {
-  // Navigation mode: 'list' (dashboard) or 'workspace' (split editor)
-  const [viewMode, setViewMode] = useState<'list' | 'workspace'>('workspace');
+  // Navigation mode: 'list' (dashboard/skills) or 'workspace' (split editor)
+  const [viewMode, setViewMode] = useState<'list' | 'workspace'>('list');
+  const [selectedSkillId, setSelectedSkillId] = useState<string | null>(null);
+  const [selectedSubdomain, setSelectedSubdomain] = useState<string>('All');
+
+  // HackerRank sidebar filters
+  const [sidebarStatus, setSidebarStatus] = useState<{ solved: boolean; unsolved: boolean }>({ solved: false, unsolved: false });
+  const [sidebarDifficulties, setSidebarDifficulties] = useState<string[]>([]);
+  const [sidebarSubdomains, setSidebarSubdomains] = useState<string[]>([]);
 
   // Dashboard Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -160,6 +314,46 @@ export const CodingPracticePage: React.FC<CodingPracticePageProps> = ({
       bookmarkedIds: bookmarks,
     });
   }, [selectedDifficulty, selectedCategory, selectedStatusFilter, searchQuery, solvedIds, attemptedIds, bookmarks]);
+
+  const currentSkill = useMemo(() => {
+    return PRACTICE_SKILLS.find((s) => s.id === selectedSkillId) || null;
+  }, [selectedSkillId]);
+
+  const skillChallenges = useMemo(() => {
+    if (!currentSkill) return [];
+    return CODING_PROBLEMS.filter((p) => {
+      // 1. Skill filter
+      if (!currentSkill.filter(p)) return false;
+
+      // 2. Subdomain tab filter
+      if (selectedSubdomain !== 'All') {
+        const matchesSub =
+          p.topic.toLowerCase().includes(selectedSubdomain.toLowerCase()) ||
+          p.badge.toLowerCase().includes(selectedSubdomain.toLowerCase());
+        if (!matchesSub) return false;
+      }
+
+      // 3. Sidebar status
+      const isSolved = solvedIds.includes(p.id);
+      if (sidebarStatus.solved && !sidebarStatus.unsolved && !isSolved) return false;
+      if (sidebarStatus.unsolved && !sidebarStatus.solved && isSolved) return false;
+
+      // 4. Sidebar difficulty
+      if (sidebarDifficulties.length > 0 && !sidebarDifficulties.includes(p.difficulty)) return false;
+
+      // 5. Sidebar subdomains
+      if (sidebarSubdomains.length > 0) {
+        const matchesSubdomain = sidebarSubdomains.some(
+          (sub) =>
+            p.topic.toLowerCase().includes(sub.toLowerCase()) ||
+            p.badge.toLowerCase().includes(sub.toLowerCase())
+        );
+        if (!matchesSubdomain) return false;
+      }
+
+      return true;
+    });
+  }, [currentSkill, selectedSubdomain, sidebarStatus, sidebarDifficulties, sidebarSubdomains, solvedIds]);
 
   // Statistics
   const totalCount = CODING_PROBLEMS.length;
@@ -401,263 +595,499 @@ export const CodingPracticePage: React.FC<CodingPracticePageProps> = ({
   if (viewMode === 'list') {
     return (
       <div id="coding-practice-dashboard" className="space-y-6 animate-in fade-in duration-200">
-        {/* Top Header */}
-        <div className="bg-surface-container-lowest p-6 rounded-2xl border border-surface-container-low flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-xs font-semibold text-secondary">
-              <button
-                type="button"
-                onClick={() => onNavigate('practice-hub')}
-                className="hover:underline flex items-center gap-1"
-              >
-                <span className="material-symbols-outlined text-sm">arrow_back</span>
-                Practice Hub
-              </button>
-              <span>/</span>
-              <span className="text-on-surface-variant">Coding Practice</span>
+        {/* ============================================================== */}
+        {/* VIEW A: DEDICATED SKILL CHALLENGE ENVIRONMENT (Images 2 & 3)   */}
+        {/* ============================================================== */}
+        {currentSkill ? (
+          <div className="space-y-6">
+            {/* Top Breadcrumb & Points Banner */}
+            <div className="bg-surface-container-lowest p-5 rounded-2xl border border-surface-container-low flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-xs font-semibold text-secondary">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedSkillId(null);
+                      setSelectedSubdomain('All');
+                    }}
+                    className="hover:underline flex items-center gap-1 font-bold text-outline hover:text-on-surface"
+                  >
+                    <span>Prepare</span>
+                  </button>
+                  <span className="text-outline">›</span>
+                  <span className="text-on-surface font-extrabold">{currentSkill.name}</span>
+                </div>
+                <h1 className="text-2xl font-black text-on-surface tracking-tight">{currentSkill.name}</h1>
+                <p className="text-xs text-on-surface-variant max-w-xl">{currentSkill.description}</p>
+              </div>
+
+              {/* HackerRank Points & Star Banner */}
+              <div className="flex items-center gap-4 bg-surface-container-low/50 px-4 py-2.5 rounded-xl border border-surface-container-high/40 shrink-0">
+                <div className="text-right">
+                  <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">
+                    30 more points to get your first star!
+                  </div>
+                  <div className="text-[11px] text-outline font-mono">
+                    Rank: <strong className="text-on-surface font-sans">6444280</strong> | Points: <strong className="text-on-surface font-sans">{solvedCount * 10}/30</strong>
+                  </div>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-amber-400/10 border border-amber-400/30 flex items-center justify-center text-amber-500 shrink-0">
+                  <span className="material-symbols-outlined text-[22px]">workspace_premium</span>
+                </div>
+              </div>
             </div>
-            <h1 className="text-2xl font-black text-on-surface tracking-tight">Coding Practice</h1>
-            <p className="text-sm text-on-surface-variant max-w-2xl">
-              Master core algorithmic patterns, data structures, and company OA coding problems with real compilation and test-case execution.
-            </p>
-          </div>
 
-          <button
-            type="button"
-            onClick={() => setViewMode('workspace')}
-            className="px-4 py-2.5 rounded-xl bg-secondary text-on-secondary font-bold text-sm hover:bg-secondary-container transition-all flex items-center gap-2 shadow-xs shrink-0 self-start md:self-center"
-          >
-            <span className="material-symbols-outlined text-[18px]">terminal</span>
-            <span>Open Problem Workspace</span>
-          </button>
-        </div>
-
-        {/* Stats Row */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <div className="bg-surface-container-lowest p-4 rounded-xl border border-surface-container-low">
-            <span className="text-xs text-outline font-medium block">Total Problems</span>
-            <span className="text-2xl font-black text-on-surface">{totalCount}</span>
-          </div>
-
-          <div className="bg-surface-container-lowest p-4 rounded-xl border border-surface-container-low">
-            <span className="text-xs text-outline font-medium block">Solved</span>
-            <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
-              {solvedCount}
-              <span className="text-xs font-normal text-outline ml-1">/ {totalCount}</span>
-            </span>
-          </div>
-
-          <div className="bg-surface-container-lowest p-4 rounded-xl border border-surface-container-low">
-            <span className="text-xs text-outline font-medium block">Attempted</span>
-            <span className="text-2xl font-black text-amber-600 dark:text-amber-400">{attemptedCount}</span>
-          </div>
-
-          <div className="bg-surface-container-lowest p-4 rounded-xl border border-surface-container-low">
-            <span className="text-xs text-outline font-medium block">Accuracy</span>
-            <span className="text-2xl font-black text-secondary">{accuracyPct}%</span>
-          </div>
-
-          <div className="bg-surface-container-lowest p-4 rounded-xl border border-surface-container-low">
-            <span className="text-xs text-outline font-medium block">Coding Streak</span>
-            <span className="text-2xl font-black text-orange-500 flex items-center gap-1">
-              <span>5</span>
-              <span className="text-xs font-semibold">Days 🔥</span>
-            </span>
-          </div>
-
-          <div className="bg-surface-container-lowest p-3 rounded-xl border border-surface-container-low flex flex-col justify-center gap-1 text-[11px]">
-            <div className="flex justify-between items-center text-emerald-600 font-bold">
-              <span>Easy</span>
-              <span>{easySolved}/{easyTotal}</span>
-            </div>
-            <div className="flex justify-between items-center text-amber-500 font-bold">
-              <span>Medium</span>
-              <span>{medSolved}/{medTotal}</span>
-            </div>
-            <div className="flex justify-between items-center text-rose-500 font-bold">
-              <span>Hard</span>
-              <span>{hardSolved}/{hardTotal}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Filter Strip: Categories */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap shrink-0 ${
-                selectedCategory === cat
-                  ? 'bg-secondary text-on-secondary shadow-xs'
-                  : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface border border-surface-container-low'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-
-        {/* Filter Strip: Difficulty, Status, Search */}
-        <div className="bg-surface-container-lowest p-3 rounded-xl border border-surface-container-low flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="flex items-center gap-3 flex-wrap">
-            {/* Difficulty Tabs */}
-            <div className="flex items-center gap-1 bg-surface-container-low p-1 rounded-lg">
-              {['All', 'Easy', 'Medium', 'Hard'].map((diff) => (
+            {/* Subdomain Filter Chips */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+              {currentSkill.subdomains.map((sub) => (
                 <button
-                  key={diff}
+                  key={sub}
                   type="button"
-                  onClick={() => setSelectedDifficulty(diff)}
-                  className={`px-2.5 py-1 rounded text-xs font-bold transition-all ${
-                    selectedDifficulty === diff
-                      ? 'bg-surface-container-lowest text-secondary shadow-xs'
-                      : 'text-outline hover:text-on-surface'
+                  onClick={() => setSelectedSubdomain(sub)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0 ${
+                    selectedSubdomain === sub
+                      ? 'bg-secondary text-on-secondary shadow-xs'
+                      : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface border border-surface-container-low'
                   }`}
                 >
-                  {diff}
+                  {sub}
                 </button>
               ))}
             </div>
 
-            {/* Status Tabs */}
-            <div className="flex items-center gap-1 bg-surface-container-low p-1 rounded-lg">
-              {(['All', 'Solved', 'Unsolved', 'Attempted', 'Bookmarked'] as const).map((st) => (
-                <button
-                  key={st}
-                  type="button"
-                  onClick={() => setSelectedStatusFilter(st)}
-                  className={`px-2.5 py-1 rounded text-xs font-bold transition-all ${
-                    selectedStatusFilter === st
-                      ? 'bg-surface-container-lowest text-secondary shadow-xs'
-                      : 'text-outline hover:text-on-surface'
-                  }`}
-                >
-                  {st}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Search Box */}
-          <div className="relative min-w-[240px]">
-            <span className="material-symbols-outlined text-outline absolute left-3 top-2.5 text-sm">search</span>
-            <input
-              type="text"
-              placeholder="Search problems..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-surface-container-low text-on-surface pl-9 pr-3 py-1.5 rounded-lg text-xs outline-none focus:ring-1 focus:ring-secondary border border-transparent focus:border-secondary"
-            />
-          </div>
-        </div>
-
-        {/* Problem List Table */}
-        <div className="bg-surface-container-lowest rounded-2xl border border-surface-container-low overflow-hidden">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-surface-container-low text-[11px] font-bold text-outline uppercase tracking-wider bg-surface-container-low/40">
-                <th className="py-3 px-4 w-12 text-center">Status</th>
-                <th className="py-3 px-4">Problem</th>
-                <th className="py-3 px-4 w-28">Difficulty</th>
-                <th className="py-3 px-4 w-28">Acceptance</th>
-                <th className="py-3 px-4 w-44">Topic</th>
-                <th className="py-3 px-4 w-24 text-center">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-surface-container-low text-xs">
-              {filteredProblems.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-12 text-center text-outline">
-                    No coding problems match your selected filters.
-                  </td>
-                </tr>
-              ) : (
-                filteredProblems.map((p, idx) => {
-                  const isSolved = solvedIds.includes(p.id);
-                  const isAttempted = attemptedIds.includes(p.id);
-                  const globalIdx = CODING_PROBLEMS.findIndex((orig) => orig.id === p.id);
-
-                  return (
-                    <tr
-                      key={p.id}
+            {/* Main 2-Column Grid (Challenges List + Filter Sidebar) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* Left Column: Challenge Cards (8 Cols) */}
+              <div className="lg:col-span-8 space-y-4">
+                {skillChallenges.length === 0 ? (
+                  <div className="bg-surface-container-lowest p-12 rounded-2xl border border-surface-container-low text-center space-y-3">
+                    <span className="material-symbols-outlined text-4xl text-outline/50">inbox</span>
+                    <h3 className="font-bold text-on-surface">No challenges found</h3>
+                    <p className="text-xs text-outline max-w-sm mx-auto">
+                      No challenges in {currentSkill.name} match your selected filters. Try unchecking some filters or selecting &quot;All&quot;.
+                    </p>
+                    <button
+                      type="button"
                       onClick={() => {
-                        setActiveIndex(globalIdx !== -1 ? globalIdx : 0);
-                        setViewMode('workspace');
-                        setVerdict(null);
+                        setSelectedSubdomain('All');
+                        setSidebarStatus({ solved: false, unsolved: false });
+                        setSidebarDifficulties([]);
+                        setSidebarSubdomains([]);
                       }}
-                      className="hover:bg-surface-container-low/60 cursor-pointer transition-colors group"
+                      className="px-3 py-1.5 rounded-lg bg-secondary text-on-secondary text-xs font-bold"
                     >
-                      {/* Status */}
-                      <td className="py-3 px-4 text-center">
-                        {isSolved ? (
-                          <span className="material-symbols-outlined text-emerald-600 text-base">check_circle</span>
-                        ) : isAttempted ? (
-                          <span className="material-symbols-outlined text-amber-500 text-base">timelapse</span>
-                        ) : (
-                          <span className="text-outline/40 font-mono text-sm">—</span>
-                        )}
-                      </td>
+                      Reset Filters
+                    </button>
+                  </div>
+                ) : (
+                  skillChallenges.map((prob) => {
+                    const isSolved = solvedIds.includes(prob.id);
+                    const globalIdx = CODING_PROBLEMS.findIndex((p) => p.id === prob.id);
 
-                      {/* Problem Title */}
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-on-surface group-hover:text-secondary transition-colors">
-                            {idx + 1}. {p.title}
-                          </span>
-                          <span className="text-[10px] text-outline bg-surface-container-low px-1.5 py-0.5 rounded">
-                            {p.badge}
-                          </span>
+                    return (
+                      <div
+                        key={prob.id}
+                        className="bg-surface-container-lowest p-6 rounded-2xl border border-surface-container-low hover:border-emerald-500/40 hover:shadow-sm transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                      >
+                        <div className="space-y-1.5 flex-1 min-w-0">
+                          <h3
+                            onClick={() => {
+                              setActiveIndex(globalIdx !== -1 ? globalIdx : 0);
+                              setViewMode('workspace');
+                              setVerdict(null);
+                            }}
+                            className="text-lg font-extrabold text-on-surface hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer"
+                          >
+                            {prob.title}
+                          </h3>
+
+                          <div className="flex items-center gap-2 text-xs text-outline flex-wrap font-medium">
+                            <span
+                              className={`font-bold ${
+                                prob.difficulty === 'Easy'
+                                  ? 'text-emerald-600 dark:text-emerald-400'
+                                  : prob.difficulty === 'Medium'
+                                  ? 'text-amber-500 dark:text-amber-400'
+                                  : 'text-rose-500 dark:text-rose-400'
+                              }`}
+                            >
+                              {prob.difficulty}
+                            </span>
+                            <span>•</span>
+                            <span>Problem Solving (Basic)</span>
+                            <span>•</span>
+                            <span>Max Score: 10</span>
+                            <span>•</span>
+                            <span>
+                              Success Rate: {prob.difficulty === 'Easy' ? '97.56%' : prob.difficulty === 'Medium' ? '74.20%' : '48.15%'}
+                            </span>
+                            {isSolved && (
+                              <>
+                                <span>•</span>
+                                <span className="text-emerald-600 font-bold flex items-center gap-0.5">
+                                  <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                                  Solved
+                                </span>
+                              </>
+                            )}
+                          </div>
+
+                          <p className="text-xs text-on-surface-variant line-clamp-2 mt-1 leading-relaxed">
+                            {prob.description}
+                          </p>
                         </div>
-                      </td>
 
-                      {/* Difficulty */}
-                      <td className="py-3 px-4">
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                            p.difficulty === 'Easy'
-                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                              : p.difficulty === 'Medium'
-                              ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                              : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
-                          }`}
-                        >
-                          {p.difficulty}
-                        </span>
-                      </td>
+                        <div className="flex items-center gap-3 shrink-0 self-start sm:self-center">
+                          <button
+                            type="button"
+                            onClick={() => toggleBookmark(prob.id)}
+                            className={`p-2 rounded-xl transition-colors ${
+                              bookmarks.includes(prob.id)
+                                ? 'text-amber-400 bg-amber-400/10'
+                                : 'text-outline hover:text-on-surface hover:bg-surface-container-low'
+                            }`}
+                            title="Bookmark challenge"
+                          >
+                            <span className="material-symbols-outlined text-[20px]">
+                              {bookmarks.includes(prob.id) ? 'star' : 'star_border'}
+                            </span>
+                          </button>
 
-                      {/* Acceptance */}
-                      <td className="py-3 px-4 font-mono text-outline">
-                        {p.difficulty === 'Easy' ? '82.4%' : p.difficulty === 'Medium' ? '54.1%' : '38.7%'}
-                      </td>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveIndex(globalIdx !== -1 ? globalIdx : 0);
+                              setViewMode('workspace');
+                              setVerdict(null);
+                            }}
+                            className="px-5 py-2.5 rounded-lg bg-[#007a3d] hover:bg-[#006030] text-white font-bold text-xs tracking-wide transition-all shadow-sm flex items-center gap-1.5"
+                          >
+                            <span>Solve Challenge</span>
+                            <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
 
-                      {/* Topic */}
-                      <td className="py-3 px-4 text-on-surface-variant font-medium">
-                        {p.topic}
-                      </td>
+              {/* Right Column: HackerRank Filter Sidebar (4 Cols) */}
+              <div className="lg:col-span-4 space-y-6 bg-surface-container-lowest p-5 rounded-2xl border border-surface-container-low text-xs sticky top-4">
+                {/* STATUS */}
+                <div className="space-y-2.5">
+                  <h4 className="font-bold uppercase tracking-wider text-outline text-[11px]">STATUS</h4>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2.5 cursor-pointer text-on-surface">
+                      <input
+                        type="checkbox"
+                        checked={sidebarStatus.solved}
+                        onChange={(e) => setSidebarStatus((prev) => ({ ...prev, solved: e.target.checked }))}
+                        className="rounded border-surface-container-high text-emerald-600 focus:ring-0"
+                      />
+                      <span>Solved</span>
+                    </label>
+                    <label className="flex items-center gap-2.5 cursor-pointer text-on-surface">
+                      <input
+                        type="checkbox"
+                        checked={sidebarStatus.unsolved}
+                        onChange={(e) => setSidebarStatus((prev) => ({ ...prev, unsolved: e.target.checked }))}
+                        className="rounded border-surface-container-high text-emerald-600 focus:ring-0"
+                      />
+                      <span>Unsolved</span>
+                    </label>
+                  </div>
+                </div>
 
-                      {/* Action */}
-                      <td className="py-3 px-4 text-center">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
+                <div className="border-t border-surface-container-low pt-4 space-y-2.5">
+                  <h4 className="font-bold uppercase tracking-wider text-outline text-[11px]">DIFFICULTY</h4>
+                  <div className="space-y-2">
+                    {['Easy', 'Medium', 'Hard'].map((diff) => (
+                      <label key={diff} className="flex items-center gap-2.5 cursor-pointer text-on-surface">
+                        <input
+                          type="checkbox"
+                          checked={sidebarDifficulties.includes(diff)}
+                          onChange={(e) => {
+                            if (e.target.checked) setSidebarDifficulties((prev) => [...prev, diff]);
+                            else setSidebarDifficulties((prev) => prev.filter((d) => d !== diff));
+                          }}
+                          className="rounded border-surface-container-high text-emerald-600 focus:ring-0"
+                        />
+                        <span>{diff}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-t border-surface-container-low pt-4 space-y-2.5">
+                  <h4 className="font-bold uppercase tracking-wider text-outline text-[11px]">SUBDOMAINS</h4>
+                  <div className="space-y-2 max-h-64 overflow-y-auto pr-1 scrollbar-thin">
+                    {currentSkill.subdomains
+                      .filter((s) => s !== 'All')
+                      .map((sub) => (
+                        <label key={sub} className="flex items-center gap-2.5 cursor-pointer text-on-surface">
+                          <input
+                            type="checkbox"
+                            checked={sidebarSubdomains.includes(sub)}
+                            onChange={(e) => {
+                              if (e.target.checked) setSidebarSubdomains((prev) => [...prev, sub]);
+                              else setSidebarSubdomains((prev) => prev.filter((s) => s !== sub));
+                            }}
+                            className="rounded border-surface-container-high text-emerald-600 focus:ring-0"
+                          />
+                          <span>{sub}</span>
+                        </label>
+                      ))}
+                  </div>
+                </div>
+
+                {/* Back to all skills button */}
+                <div className="border-t border-surface-container-low pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedSkillId(null);
+                      setSelectedSubdomain('All');
+                    }}
+                    className="w-full py-2 px-3 rounded-xl border border-surface-container-high hover:bg-surface-container-low text-on-surface font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[15px]">arrow_back</span>
+                    <span>View All Practice Skills</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* ============================================================== */
+          /* VIEW B: PRACTICE SKILLS GRID & MOCK INTERVIEWS (Images 1 & 4)  */
+          /* ============================================================== */
+          <div className="space-y-8">
+            {/* Top AI-Powered Mock Interviews Section (Image 4) */}
+            <div className="bg-surface-container-lowest p-6 rounded-2xl border border-surface-container-low space-y-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-black text-on-surface tracking-tight">AI-powered Mock Interviews</h2>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                      No Mock Interview Credits Available
+                    </span>
+                  </div>
+                  <p className="text-xs text-on-surface-variant mt-1">
+                    Ace your next job interview by practicing with AI-powered mock interviews.{' '}
+                    <button
+                      type="button"
+                      onClick={() => onNavigate('interview-prep')}
+                      className="text-secondary font-bold hover:underline ml-1"
+                    >
+                      Know More
+                    </button>
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-1.5 self-end md:self-center">
+                  <span className="h-2 w-2 rounded-full bg-emerald-600" />
+                  <span className="h-2 w-2 rounded-full bg-surface-container-high" />
+                  <span className="h-2 w-2 rounded-full bg-surface-container-high" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {MOCK_INTERVIEWS.map((track) => (
+                  <div
+                    key={track.id}
+                    onClick={() => onNavigate('interview-prep')}
+                    className="p-4 rounded-xl border border-surface-container-low bg-surface-container-low/30 hover:border-secondary/40 hover:bg-surface-container-low transition-all cursor-pointer flex flex-col justify-between gap-4 group"
+                  >
+                    <div className="space-y-1.5">
+                      <h3 className="font-extrabold text-sm text-on-surface group-hover:text-secondary transition-colors">
+                        {track.title}
+                      </h3>
+                      <p className="text-[11px] text-on-surface-variant leading-relaxed line-clamp-3">
+                        {track.description}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-surface-container-low/60 text-[11px] text-outline">
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[14px]">schedule</span>
+                        <span>{track.duration}</span>
+                      </span>
+
+                      <span className="p-1 rounded bg-surface-container-high/40 text-outline">
+                        <span className="material-symbols-outlined text-[14px]">lock</span>
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Practice Skills 11 Blocks Grid (Image 1) */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-black text-on-surface tracking-tight">Practice Skills</h2>
+                  <p className="text-xs text-outline mt-0.5">Select any skill block below to explore curated challenges, test suites, and subdomains.</p>
+                </div>
+                <span className="text-xs font-semibold text-secondary">
+                  {PRACTICE_SKILLS.length} Skill Tracks
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {PRACTICE_SKILLS.map((skill) => {
+                  const matchCount = CODING_PROBLEMS.filter(skill.filter).length;
+                  const solvedInSkill = CODING_PROBLEMS.filter(skill.filter).filter((p) => solvedIds.includes(p.id)).length;
+                  return (
+                    <div
+                      key={skill.id}
+                      onClick={() => {
+                        setSelectedSkillId(skill.id);
+                        setSelectedSubdomain('All');
+                        setSidebarDifficulties([]);
+                        setSidebarSubdomains([]);
+                      }}
+                      className="bg-surface-container-lowest p-5 rounded-2xl border border-surface-container-low hover:border-emerald-500/50 hover:shadow-md transition-all cursor-pointer flex items-center justify-between group"
+                    >
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <div className="w-11 h-11 rounded-xl bg-surface-container-low/60 dark:bg-surface-container flex items-center justify-center text-on-surface group-hover:text-emerald-600 group-hover:scale-105 transition-all shrink-0">
+                          {skill.badge ? (
+                            <span className="font-black text-xs tracking-tighter text-secondary">
+                              {skill.badge}
+                            </span>
+                          ) : (
+                            <span className="material-symbols-outlined text-[22px]">
+                              {skill.icon}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="min-w-0">
+                          <h3 className="font-bold text-base text-on-surface group-hover:text-emerald-600 transition-colors truncate">
+                            {skill.name}
+                          </h3>
+                          <p className="text-[11px] text-outline truncate max-w-[200px]">
+                            {matchCount} Challenges • {solvedInSkill} Solved
+                          </p>
+                        </div>
+                      </div>
+
+                      <span className="material-symbols-outlined text-outline group-hover:text-emerald-600 group-hover:translate-x-1 transition-all text-[20px]">
+                        chevron_right
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Quick Access LeetCode Table Strip */}
+            <div className="space-y-4 pt-4 border-t border-surface-container-low">
+              {/* Category and Search Strip */}
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <h3 className="font-black text-sm text-on-surface uppercase tracking-wider">All Problems Directory</h3>
+                {/* Search */}
+                <div className="relative min-w-[240px]">
+                  <span className="material-symbols-outlined text-outline absolute left-3 top-2.5 text-sm">search</span>
+                  <input
+                    type="text"
+                    placeholder="Search all problems..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-surface-container-low text-on-surface pl-9 pr-3 py-1.5 rounded-lg text-xs outline-none focus:ring-1 focus:ring-secondary border border-transparent focus:border-secondary"
+                  />
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="bg-surface-container-lowest rounded-2xl border border-surface-container-low overflow-hidden">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-surface-container-low text-[11px] font-bold text-outline uppercase tracking-wider bg-surface-container-low/40">
+                      <th className="py-3 px-4 w-12 text-center">Status</th>
+                      <th className="py-3 px-4">Problem</th>
+                      <th className="py-3 px-4 w-28">Difficulty</th>
+                      <th className="py-3 px-4 w-28">Acceptance</th>
+                      <th className="py-3 px-4 w-44">Topic</th>
+                      <th className="py-3 px-4 w-24 text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-surface-container-low text-xs">
+                    {filteredProblems.map((p, idx) => {
+                      const isSolved = solvedIds.includes(p.id);
+                      const isAttempted = attemptedIds.includes(p.id);
+                      const globalIdx = CODING_PROBLEMS.findIndex((orig) => orig.id === p.id);
+
+                      return (
+                        <tr
+                          key={p.id}
+                          onClick={() => {
                             setActiveIndex(globalIdx !== -1 ? globalIdx : 0);
                             setViewMode('workspace');
                             setVerdict(null);
                           }}
-                          className="px-2.5 py-1 rounded bg-surface-container-low group-hover:bg-secondary group-hover:text-on-secondary text-secondary text-xs font-bold transition-all"
+                          className="hover:bg-surface-container-low/60 cursor-pointer transition-colors group"
                         >
-                          Solve
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                          <td className="py-3 px-4 text-center">
+                            {isSolved ? (
+                              <span className="material-symbols-outlined text-emerald-600 text-base">check_circle</span>
+                            ) : isAttempted ? (
+                              <span className="material-symbols-outlined text-amber-500 text-base">timelapse</span>
+                            ) : (
+                              <span className="text-outline/40 font-mono text-sm">—</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-on-surface group-hover:text-secondary transition-colors">
+                                {idx + 1}. {p.title}
+                              </span>
+                              <span className="text-[10px] text-outline bg-surface-container-low px-1.5 py-0.5 rounded">
+                                {p.badge}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                                p.difficulty === 'Easy'
+                                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                  : p.difficulty === 'Medium'
+                                  ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                                  : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                              }`}
+                            >
+                              {p.difficulty}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 font-mono text-outline">
+                            {p.difficulty === 'Easy' ? '97.5%' : p.difficulty === 'Medium' ? '74.2%' : '48.1%'}
+                          </td>
+                          <td className="py-3 px-4 text-on-surface-variant font-medium">{p.topic}</td>
+                          <td className="py-3 px-4 text-center">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveIndex(globalIdx !== -1 ? globalIdx : 0);
+                                setViewMode('workspace');
+                                setVerdict(null);
+                              }}
+                              className="px-2.5 py-1 rounded bg-[#007a3d] hover:bg-[#006030] text-white text-xs font-bold transition-all shadow-xs"
+                            >
+                              Solve
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -675,8 +1105,8 @@ export const CodingPracticePage: React.FC<CodingPracticePageProps> = ({
             onClick={() => setViewMode('list')}
             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-xs font-bold text-on-surface transition-colors"
           >
-            <span className="material-symbols-outlined text-[15px]">list</span>
-            <span>Problem List</span>
+            <span className="material-symbols-outlined text-[15px]">arrow_back</span>
+            <span>{currentSkill ? `Back to ${currentSkill.name}` : 'Practice Skills'}</span>
           </button>
 
           <div className="h-4 w-px bg-surface-container-high" />

@@ -912,6 +912,254 @@ var trap = function(height) {
     testCasesCount: 7,
     runTime: '11ms',
   },
+  {
+    id: 'solve-me-first',
+    title: 'Solve Me First',
+    badge: 'HackerRank Warmup',
+    difficulty: 'Easy',
+    topic: 'Warmup & Arithmetic',
+    complexity: 'Time: O(1) · Space: O(1)',
+    description:
+      'Complete the function solveMeFirst to compute the sum of two integers. This is an easy challenge to help you start coding in your favorite languages!',
+    constraints: '1 ≤ a, b ≤ 1000',
+    inputFormat: 'Two integers a and b',
+    outputFormat: 'Return the sum of a and b',
+    sampleInput: 'a = 2, b = 3',
+    sampleOutput: '5',
+    explanation: 'The sum of 2 and 3 is equal to 5.',
+    hints: ['Return the sum of the two parameters: return a + b;'],
+    javaCode: `class Solution {
+    public int solveMeFirst(int a, int b) {
+        // Write your solution here
+        return 0;
+    }
+}`,
+    pythonCode: `class Solution:
+    def solveMeFirst(self, a: int, b: int) -> int:
+        # Write your solution here
+        pass`,
+    cppCode: `class Solution {
+public:
+    int solveMeFirst(int a, int b) {
+        // Write your solution here
+        return 0;
+    }
+};`,
+    cCode: `int solveMeFirst(int a, int b) {
+    // Write your solution here
+    return 0;
+}`,
+    jsCode: `var solveMeFirst = function(a, b) {
+    // Write your solution here
+    return 0;
+};`,
+    testCasesCount: 3,
+    runTime: '8ms',
+  },
+  {
+    id: 'simple-array-sum',
+    title: 'Simple Array Sum',
+    badge: 'HackerRank Warmup',
+    difficulty: 'Easy',
+    topic: 'Warmup & Arrays',
+    complexity: 'Time: O(N) · Space: O(1)',
+    description:
+      'Given an array of integers, find the sum of its elements. Complete the simpleArraySum function which takes an integer array ar as parameter and returns the sum.',
+    constraints: '1 ≤ n ≤ 1000, 0 ≤ ar[i] ≤ 1000',
+    inputFormat: 'An array of integers ar',
+    outputFormat: 'Sum of all integers in the array',
+    sampleInput: 'ar = [1, 2, 3, 4, 10, 11]',
+    sampleOutput: '31',
+    explanation: '1 + 2 + 3 + 4 + 10 + 11 = 31.',
+    hints: ['Iterate through the array and accumulate the sum in a variable.'],
+    javaCode: `class Solution {
+    public int simpleArraySum(int[] ar) {
+        // Write your solution here
+        return 0;
+    }
+}`,
+    pythonCode: `class Solution:
+    def simpleArraySum(self, ar: list[int]) -> int:
+        # Write your solution here
+        pass`,
+    cppCode: `class Solution {
+public:
+    int simpleArraySum(vector<int>& ar) {
+        // Write your solution here
+        return 0;
+    }
+};`,
+    cCode: `int simpleArraySum(int* ar, int arSize) {
+    // Write your solution here
+    return 0;
+}`,
+    jsCode: `var simpleArraySum = function(ar) {
+    // Write your solution here
+    return 0;
+};`,
+    testCasesCount: 4,
+    runTime: '10ms',
+  },
+  {
+    id: 'compare-the-triplets',
+    title: 'Compare the Triplets',
+    badge: 'HackerRank Warmup',
+    difficulty: 'Easy',
+    topic: 'Warmup & Arrays',
+    complexity: 'Time: O(1) · Space: O(1)',
+    description:
+      'Alice and Bob each created one problem for HackerRank. A reviewer rates the two challenges, awarding points on a scale from 1 to 100 for three categories: problem clarity, originality, and difficulty. Compare a[i] with b[i] and award 1 point to the winner of each category.',
+    constraints: '1 ≤ a[i] ≤ 100, 1 ≤ b[i] ≤ 100',
+    inputFormat: 'Two integer arrays a and b of size 3',
+    outputFormat: 'Array of size 2 with Alice and Bob scores',
+    sampleInput: 'a = [5, 6, 7], b = [3, 6, 10]',
+    sampleOutput: '[1, 1]',
+    explanation: 'Alice wins category 0 (5 > 3). Category 1 is a tie (6 = 6). Bob wins category 2 (7 < 10). Result is [1, 1].',
+    hints: ['Compare a[0] vs b[0], a[1] vs b[1], and a[2] vs b[2].'],
+    javaCode: `class Solution {
+    public int[] compareTriplets(int[] a, int[] b) {
+        // Write your solution here
+        return new int[]{};
+    }
+}`,
+    pythonCode: `class Solution:
+    def compareTriplets(self, a: list[int], b: list[int]) -> list[int]:
+        # Write your solution here
+        pass`,
+    cppCode: `class Solution {
+public:
+    vector<int> compareTriplets(vector<int>& a, vector<int>& b) {
+        // Write your solution here
+        return {};
+    }
+};`,
+    cCode: `int* compareTriplets(int* a, int aSize, int* b, int bSize, int* returnSize) {
+    // Write your solution here
+    *returnSize = 2;
+    return NULL;
+}`,
+    jsCode: `var compareTriplets = function(a, b) {
+    // Write your solution here
+    return [];
+};`,
+    testCasesCount: 4,
+    runTime: '10ms',
+  },
+  {
+    id: 'birthday-cake-candles',
+    title: 'Birthday Cake Candles',
+    badge: 'HackerRank Warmup',
+    difficulty: 'Easy',
+    topic: 'Warmup & Arrays',
+    complexity: 'Time: O(N) · Space: O(1)',
+    description:
+      'You are in charge of the cake for a child’s birthday. It will have one candle for each year of their total age. They will only be able to blow out the tallest candles. Count how many candles are tallest.',
+    constraints: '1 ≤ n ≤ 10^5, 1 ≤ candles[i] ≤ 10^7',
+    inputFormat: 'Integer array candles',
+    outputFormat: 'Number of tallest candles',
+    sampleInput: 'candles = [3, 2, 1, 3]',
+    sampleOutput: '2',
+    explanation: 'The maximum height is 3, and there are 2 candles with height 3.',
+    hints: ['Find the maximum value first, then count how many times it appears in a single pass.'],
+    javaCode: `class Solution {
+    public int birthdayCakeCandles(int[] candles) {
+        // Write your solution here
+        return 0;
+    }
+}`,
+    pythonCode: `class Solution:
+    def birthdayCakeCandles(self, candles: list[int]) -> int:
+        # Write your solution here
+        pass`,
+    cppCode: `class Solution {
+public:
+    int birthdayCakeCandles(vector<int>& candles) {
+        // Write your solution here
+        return 0;
+    }
+};`,
+    cCode: `int birthdayCakeCandles(int* candles, int candlesSize) {
+    // Write your solution here
+    return 0;
+}`,
+    jsCode: `var birthdayCakeCandles = function(candles) {
+    // Write your solution here
+    return 0;
+};`,
+    testCasesCount: 4,
+    runTime: '12ms',
+  },
+  {
+    id: 'sql-select-all',
+    title: 'Revising the Select Query I',
+    badge: 'HackerRank SQL',
+    difficulty: 'Easy',
+    topic: 'Basic Select & Filtering',
+    complexity: 'Time: O(N) · Space: O(1)',
+    description:
+      'Query all columns for all American cities in the CITY table with populations larger than 100,000. The CountryCode for America is USA.',
+    constraints: 'CITY table contains ID, NAME, COUNTRYCODE, DISTRICT, POPULATION',
+    inputFormat: 'Table CITY',
+    outputFormat: 'All columns of matching records',
+    sampleInput: 'COUNTRYCODE = "USA", POPULATION > 100000',
+    sampleOutput: 'Records with CountryCode USA and Pop > 100k',
+    explanation: 'Filters table using WHERE COUNTRYCODE = "USA" AND POPULATION > 100000',
+    hints: ['Use SELECT * FROM CITY WHERE COUNTRYCODE = "USA" AND POPULATION > 100000;'],
+    javaCode: `class Solution {
+    public String executeQuery() {
+        // Return SQL Query
+        return "SELECT * FROM CITY WHERE COUNTRYCODE = 'USA' AND POPULATION > 100000;";
+    }
+}`,
+    pythonCode: `class Solution:
+    def executeQuery(self) -> str:
+        # Return SQL Query
+        return "SELECT * FROM CITY WHERE COUNTRYCODE = 'USA' AND POPULATION > 100000;"`,
+    cppCode: `class Solution {
+public:
+    string executeQuery() {
+        return "SELECT * FROM CITY WHERE COUNTRYCODE = 'USA' AND POPULATION > 100000;";
+    }
+};`,
+    testCasesCount: 2,
+    runTime: '5ms',
+  },
+  {
+    id: 'react-counter-component',
+    title: 'Item Counter State Hook',
+    badge: 'React & Frontend',
+    difficulty: 'Easy',
+    topic: 'Components & State',
+    complexity: 'Time: O(1) · Space: O(1)',
+    description:
+      'Create a counter logic function updateCount(current, action) where action can be "INCREMENT", "DECREMENT", or "RESET". Decrement must not go below 0.',
+    constraints: '0 ≤ count ≤ 1000',
+    inputFormat: 'current: number, action: string',
+    outputFormat: 'Updated count number',
+    sampleInput: 'current = 5, action = "DECREMENT"',
+    sampleOutput: '4',
+    explanation: '5 decremented by 1 is 4.',
+    hints: ['Check if action is INCREMENT, DECREMENT (Math.max(0, current - 1)), or RESET (0).'],
+    javaCode: `class Solution {
+    public int updateCount(int current, String action) {
+        // Write your solution here
+        return 0;
+    }
+}`,
+    pythonCode: `class Solution:
+    def updateCount(self, current: int, action: str) -> int:
+        # Write your solution here
+        pass`,
+    cppCode: `class Solution {
+public:
+    int updateCount(int current, string action) {
+        // Write your solution here
+        return 0;
+    }
+};`,
+    testCasesCount: 3,
+    runTime: '6ms',
+  },
 ];
 
 export const INITIAL_APPLICATIONS: ApplicationRecord[] = [
