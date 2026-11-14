@@ -38,8 +38,8 @@ function buildNormalizedDatasourceUrl(): string {
       parsed.searchParams.set('pool_timeout', '60');
     }
     if (isPooler && !parsed.searchParams.has('connection_limit')) {
-      // Neon free tier PgBouncer: keep connection count low to avoid pool exhaustion
-      parsed.searchParams.set('connection_limit', '3');
+      // Allow sufficient pool size for concurrent dashboard queries without connection starvation
+      parsed.searchParams.set('connection_limit', '12');
     }
 
     return parsed.toString();

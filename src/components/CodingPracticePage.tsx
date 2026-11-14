@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Editor from '@monaco-editor/react';
 import { CodingProblem, NavigationPath } from '../types';
 import { CODING_PROBLEMS } from '../data/placementData';
+import { filterCodingProblems } from '../server/engines/codingFilters';
 
 interface CodingPracticePageProps {
   solvedIds: string[];
@@ -149,22 +150,14 @@ export const CodingPracticePage: React.FC<CodingPracticePageProps> = ({
 
   // Filtered problem list for Dashboard
   const filteredProblems = useMemo(() => {
-    return CODING_PROBLEMS.filter((p) => {
-      const isSolved = solvedIds.includes(p.id);
-      const isAttempted = attemptedIds.includes(p.id);
-      const isBookmarked = bookmarks.includes(p.id);
-
-      if (selectedDifficulty !== 'All' && p.difficulty !== selectedDifficulty) return false;
-      if (selectedCategory !== 'All' && !p.topic.toLowerCase().includes(selectedCategory.toLowerCase())) return false;
-      if (selectedStatusFilter === 'Solved' && !isSolved) return false;
-      if (selectedStatusFilter === 'Unsolved' && isSolved) return false;
-      if (selectedStatusFilter === 'Attempted' && !isAttempted) return false;
-      if (selectedStatusFilter === 'Bookmarked' && !isBookmarked) return false;
-      if (searchQuery) {
-        const q = searchQuery.toLowerCase();
-        if (!p.title.toLowerCase().includes(q) && !p.topic.toLowerCase().includes(q)) return false;
-      }
-      return true;
+    return filterCodingProblems(CODING_PROBLEMS, {
+      difficulty: selectedDifficulty,
+      category: selectedCategory,
+      status: selectedStatusFilter,
+      searchQuery,
+      solvedIds,
+      attemptedIds,
+      bookmarkedIds: bookmarks,
     });
   }, [selectedDifficulty, selectedCategory, selectedStatusFilter, searchQuery, solvedIds, attemptedIds, bookmarks]);
 

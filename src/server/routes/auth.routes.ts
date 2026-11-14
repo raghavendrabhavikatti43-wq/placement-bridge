@@ -352,40 +352,43 @@ authRouter.post(
         throw new AppError(401, 'INVALID_CREDENTIALS', 'Invalid email or password');
       }
 
-      await prisma.user.update({
-        where: { id: userRow.id },
-        data: {
-          failedLogins: 0,
-          lockedUntil: null,
-          lastLoginAt: new Date(),
-          updatedAt: new Date(),
-        },
-      });
+      // Update user state and audit log in background (non-blocking) for instant response
+      prisma.user
+        .update({
+          where: { id: userRow.id },
+          data: {
+            failedLogins: 0,
+            lockedUntil: null,
+            lastLoginAt: new Date(),
+            updatedAt: new Date(),
+          },
+        })
+        .catch(() => {});
 
-      const tokens = await createSessionAndTokens({
-        userId: userRow.id,
-        role: userRow.role,
-        userAgent: req.headers['user-agent'],
-        ip: req.ip,
-      });
-
-      setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
-
-      let profileData: StudentProfile | null = null;
-      if (userRow.role === 'STUDENT') {
-        profileData = await prisma.studentProfile.findUnique({
-          where: { userId: userRow.id },
-        });
-      }
-
-      await recordDbAudit({
+      recordDbAudit({
         actorId: userRow.id,
         action: 'USER_LOGGED_IN',
         entity: 'USER',
         entityId: userRow.id,
         metadata: { email: cleanEmail, role: userRow.role, outcome: 'SUCCESS' },
         ip: req.ip,
-      });
+      }).catch(() => {});
+
+      const [tokens, profileData] = await Promise.all([
+        createSessionAndTokens({
+          userId: userRow.id,
+          role: userRow.role,
+          userAgent: req.headers['user-agent'],
+          ip: req.ip,
+        }),
+        userRow.role === 'STUDENT'
+          ? prisma.studentProfile.findUnique({
+              where: { userId: userRow.id },
+            })
+          : Promise.resolve(null),
+      ]);
+
+      setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
 
       const adminCustodian =
         userRow.role === 'ADMIN' ? buildPublicAdminCustodian(userRow) : undefined;

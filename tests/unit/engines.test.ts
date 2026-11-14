@@ -28,6 +28,9 @@ import {
 } from '../../src/server/engines/resumeAnalyzer.ts';
 import { evaluateInterviewAnswerRubric } from '../../src/server/engines/interviewRubric.ts';
 import { escapeCsvCell } from '../../src/server/utils/response.ts';
+import { validateLoginCredentials } from '../../src/server/engines/authValidation.ts';
+import { filterCodingProblems } from '../../src/server/engines/codingFilters.ts';
+import { CODING_PROBLEMS } from '../../src/data/placementData.ts';
 
 describe('Part H1 — Profile Completion Engine', () => {
   it('computes 0% when all profile fields and relations are empty', () => {
@@ -465,5 +468,239 @@ describe('Part I & J — Resume Analyzer, PDF Generator, Rubric, Redaction & CSV
     expect(escapeCsvCell('=CMD("calc")')).toBe('"\'=CMD(""calc"")"');
     expect(escapeCsvCell('+SUM(A1:A2)')).toBe("'+SUM(A1:A2)");
     expect(escapeCsvCell('@evil')).toBe("'@evil");
+  });
+});
+
+describe('Check 1: Login Validation Function', () => {
+  it('accepts valid student credentials with proper formatting', () => {
+    const res = validateLoginCredentials('student@placementbridge.edu', 'Password@123');
+    expect(res.isValid).toBe(true);
+    expect(res.error).toBeNull();
+    expect(res.cleanEmail).toBe('student@placementbridge.edu');
+    expect(res.cleanPassword).toBe('Password@123');
+  });
+
+  it('normalizes uppercase and trimmed email addresses properly', () => {
+    const res = validateLoginCredentials('  STUDENT@PlacementBridge.EDU  ', 'Password@123');
+    expect(res.isValid).toBe(true);
+    expect(res.cleanEmail).toBe('student@placementbridge.edu');
+  });
+
+  it('rejects empty or whitespace-only emails', () => {
+    const res1 = validateLoginCredentials('', 'Password@123');
+    expect(res1.isValid).toBe(false);
+    expect(res1.error).toContain('Email');
+
+    const res2 = validateLoginCredentials('   ', 'Password@123');
+    expect(res2.isValid).toBe(false);
+  });
+
+  it('rejects malformed email formats', () => {
+    const res1 = validateLoginCredentials('notanemail', 'Password@123');
+    expect(res1.isValid).toBe(false);
+    expect(res1.error).toContain('valid student Email');
+
+    const res2 = validateLoginCredentials('user@domain', 'Password@123');
+    expect(res2.isValid).toBe(false);
+  });
+
+  it('rejects missing, empty, or short passwords (< 6 characters)', () => {
+    const resEmpty = validateLoginCredentials('student@nie.edu.in', '');
+    expect(resEmpty.isValid).toBe(false);
+    expect(resEmpty.error).toContain('blank');
+
+    const resShort = validateLoginCredentials('student@nie.edu.in', '12345');
+    expect(resShort.isValid).toBe(false);
+    expect(resShort.error).toContain('at least 6 characters');
+  });
+});
+
+describe('Check 2: Eligibility Calculation Gives Correct Result', () => {
+  const standardRoleReq = {
+    minCgpa: 7.5,
+    minTenthPct: 70,
+    minTwelfthPct: 70,
+    maxActiveBacklogs: 0,
+    maxTotalBacklogs: 1,
+    allowedBranches: ['CSE', 'IT', 'ECE'],
+  };
+
+  it('returns ELIGIBLE when candidate meets all academic cutoffs', () => {
+    const res = evaluateEligibility(
+      {
+        cgpa: 8.2,
+        tenthPct: 85,
+        twelfthPct: 82,
+        activeBacklogs: 0,
+        totalBacklogs: 0,
+        department: 'Computer Engg (CSE)',
+      },
+      standardRoleReq
+    );
+    expect(res.status).toBe('ELIGIBLE');
+    expect(res.missingFields).toHaveLength(0);
+    expect(res.results.every((r) => r.status === 'PASS')).toBe(true);
+  });
+
+  it('returns NOT_ELIGIBLE when CGPA is below the minimum cutoff', () => {
+    const res = evaluateEligibility(
+      {
+        cgpa: 7.2, // Below 7.5
+        tenthPct: 85,
+        twelfthPct: 82,
+        activeBacklogs: 0,
+        totalBacklogs: 0,
+        department: 'Computer Engg (CSE)',
+      },
+      standardRoleReq
+    );
+    expect(res.status).toBe('NOT_ELIGIBLE');
+    const cgpaResult = res.results.find((r) => r.criterion === 'CGPA');
+    expect(cgpaResult?.status).toBe('FAIL');
+  });
+
+  it('returns NOT_ELIGIBLE when candidate has active backlogs exceeding cutoff', () => {
+    const res = evaluateEligibility(
+      {
+        cgpa: 8.5,
+        tenthPct: 85,
+        twelfthPct: 82,
+        activeBacklogs: 1, // Cutoff is 0
+        totalBacklogs: 1,
+        department: 'Computer Engg (CSE)',
+      },
+      standardRoleReq
+    );
+    expect(res.status).toBe('NOT_ELIGIBLE');
+    const backlogsResult = res.results.find((r) => r.criterion === 'Active Backlogs');
+    expect(backlogsResult?.status).toBe('FAIL');
+  });
+
+  it('returns NOT_ELIGIBLE when branch is not in the allowed list', () => {
+    const res = evaluateEligibility(
+      {
+        cgpa: 9.0,
+        tenthPct: 90,
+        twelfthPct: 90,
+        activeBacklogs: 0,
+        totalBacklogs: 0,
+        department: 'Civil Engineering', // Not CSE/IT/ECE
+      },
+      standardRoleReq
+    );
+    expect(res.status).toBe('NOT_ELIGIBLE');
+    const branchResult = res.results.find((r) => r.criterion === 'Department / Branch');
+    expect(branchResult?.status).toBe('FAIL');
+  });
+
+  it('returns ELIGIBLE when role allows ALL engineering branches', () => {
+    const res = evaluateEligibility(
+      {
+        cgpa: 8.0,
+        tenthPct: 75,
+        twelfthPct: 75,
+        activeBacklogs: 0,
+        totalBacklogs: 0,
+        department: 'Mechanical Engg (ME)',
+      },
+      {
+        ...standardRoleReq,
+        allowedBranches: ['All Engineering Branches'],
+      }
+    );
+    expect(res.status).toBe('ELIGIBLE');
+  });
+
+  it('returns INSUFFICIENT_INFO when critical academic fields are missing', () => {
+    const res = evaluateEligibility(
+      {
+        cgpa: null,
+        tenthPct: null,
+        twelfthPct: null,
+        activeBacklogs: 0,
+        department: null,
+      },
+      standardRoleReq
+    );
+    expect(res.status).toBe('INSUFFICIENT_INFO');
+    expect(res.missingFields.length).toBeGreaterThan(0);
+  });
+});
+
+describe('Check 3: Coding Question Filters Engine', () => {
+  it('filters problems accurately by difficulty (Easy, Medium, Hard)', () => {
+    const easyProbs = filterCodingProblems(CODING_PROBLEMS, { difficulty: 'Easy' });
+    expect(easyProbs.length).toBeGreaterThan(0);
+    expect(easyProbs.every((p) => p.difficulty === 'Easy')).toBe(true);
+
+    const medProbs = filterCodingProblems(CODING_PROBLEMS, { difficulty: 'Medium' });
+    expect(medProbs.length).toBeGreaterThan(0);
+    expect(medProbs.every((p) => p.difficulty === 'Medium')).toBe(true);
+
+    const hardProbs = filterCodingProblems(CODING_PROBLEMS, { difficulty: 'Hard' });
+    expect(hardProbs.length).toBeGreaterThan(0);
+    expect(hardProbs.every((p) => p.difficulty === 'Hard')).toBe(true);
+  });
+
+  it('filters problems by topic category accurately', () => {
+    const arrayProbs = filterCodingProblems(CODING_PROBLEMS, { category: 'Arrays' });
+    expect(arrayProbs.length).toBeGreaterThan(0);
+    expect(
+      arrayProbs.every(
+        (p) =>
+          p.topic.toLowerCase().includes('array') || (p.badge || '').toLowerCase().includes('array')
+      )
+    ).toBe(true);
+
+    const dpProbs = filterCodingProblems(CODING_PROBLEMS, { category: 'Dynamic Programming' });
+    expect(dpProbs.length).toBeGreaterThan(0);
+    expect(dpProbs.every((p) => p.topic.toLowerCase().includes('dynamic') || p.id.includes('knapsack'))).toBe(true);
+  });
+
+  it('filters problems by user status (Solved / Unsolved / Attempted)', () => {
+    const solvedIds = ['second-largest'];
+    const attemptedIds = ['second-largest', 'longest-unique-substring'];
+
+    const solvedList = filterCodingProblems(CODING_PROBLEMS, {
+      status: 'Solved',
+      solvedIds,
+    });
+    expect(solvedList.map((p) => p.id)).toEqual(['second-largest']);
+
+    const unsolvedList = filterCodingProblems(CODING_PROBLEMS, {
+      status: 'Unsolved',
+      solvedIds,
+    });
+    expect(unsolvedList.some((p) => p.id === 'second-largest')).toBe(false);
+
+    const attemptedList = filterCodingProblems(CODING_PROBLEMS, {
+      status: 'Attempted',
+      attemptedIds,
+    });
+    expect(attemptedList.map((p) => p.id)).toEqual(['second-largest', 'longest-unique-substring']);
+  });
+
+  it('filters problems by search keyword in title or topic', () => {
+    const searchResult = filterCodingProblems(CODING_PROBLEMS, {
+      searchQuery: 'Second Largest',
+    });
+    expect(searchResult.length).toBe(1);
+    expect(searchResult[0].id).toBe('second-largest');
+
+    const waterSearch = filterCodingProblems(CODING_PROBLEMS, {
+      searchQuery: 'Rain Water',
+    });
+    expect(waterSearch.length).toBe(1);
+    expect(waterSearch[0].id).toBe('trapping-rain-water');
+  });
+
+  it('combines multiple filters (Difficulty + Search + Topic) seamlessly', () => {
+    const combined = filterCodingProblems(CODING_PROBLEMS, {
+      difficulty: 'Medium',
+      category: 'Sliding Window',
+      searchQuery: 'Substring',
+    });
+    expect(combined.length).toBe(1);
+    expect(combined[0].id).toBe('longest-unique-substring');
   });
 });

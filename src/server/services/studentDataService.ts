@@ -45,6 +45,8 @@ export async function loadAllSkillsCatalogue(): Promise<SkillDescriptor[]> {
   }
 }
 
+let _cachedCandidateRoles: { roles: any[]; timestamp: number } | null = null;
+
 export async function loadCandidateRolesFromDb(includeInactive = false): Promise<{
   roles: (CandidateRoleInput & {
     companySlug: string | null;
@@ -62,6 +64,9 @@ export async function loadCandidateRolesFromDb(includeInactive = false): Promise
     stages: { id: string; stageOrder: number; name: string; description: string | null }[];
   })[];
 }> {
+  if (!includeInactive && _cachedCandidateRoles && Date.now() - _cachedCandidateRoles.timestamp < 60_000) {
+    return { roles: _cachedCandidateRoles.roles };
+  }
   try {
     const compRows = await prisma.company.findMany({
       where: includeInactive ? undefined : { isActive: true },
@@ -155,6 +160,9 @@ export async function loadCandidateRolesFromDb(includeInactive = false): Promise
       }
     }
 
+    if (!includeInactive) {
+      _cachedCandidateRoles = { roles: resultRoles, timestamp: Date.now() };
+    }
     return { roles: resultRoles };
   } catch (err) {
     sanitizeDbError('loadCandidateRolesFromDb', err);

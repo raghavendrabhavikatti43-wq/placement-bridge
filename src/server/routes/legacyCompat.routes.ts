@@ -332,36 +332,41 @@ legacyCompatRouter.post(
         throw new AppError(401, 'INVALID_CREDENTIALS', 'Invalid email or password.');
       }
 
-      await prisma.user.update({
-        where: { id: existing.id },
-        data: {
-          failedLogins: 0,
-          lockedUntil: null,
-          lastLoginAt: new Date(),
-          updatedAt: new Date(),
-        },
-      });
+      // Update user state and audit log in background (non-blocking) for instant response
+      prisma.user
+        .update({
+          where: { id: existing.id },
+          data: {
+            failedLogins: 0,
+            lockedUntil: null,
+            lastLoginAt: new Date(),
+            updatedAt: new Date(),
+          },
+        })
+        .catch(() => {});
 
-      const sp = await prisma.studentProfile.findUnique({
-        where: { userId: existing.id },
-      });
-
-      const tokens = await createSessionAndTokens({
-        userId: existing.id,
-        role: 'STUDENT',
-        userAgent: req.headers['user-agent'],
-        ip: req.ip,
-      });
-      setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
-
-      await recordDbAudit({
+      recordDbAudit({
         actorId: existing.id,
         action: 'Signed in via Student Email ID',
         entity: 'AUTH',
         entityId: existing.id,
         metadata: { actor: cleanEmail, role: 'student', outcome: 'SUCCESS' },
         ip: req.ip,
-      });
+      }).catch(() => {});
+
+      const [sp, tokens] = await Promise.all([
+        prisma.studentProfile.findUnique({
+          where: { userId: existing.id },
+        }),
+        createSessionAndTokens({
+          userId: existing.id,
+          role: 'STUDENT',
+          userAgent: req.headers['user-agent'],
+          ip: req.ip,
+        }),
+      ]);
+
+      setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
 
       res.json({
         token: tokens.accessToken,
@@ -583,6 +588,17 @@ legacyCompatRouter.post(
   })
 );
 
+// In-memory 30s cache for student portal bootstrap state to prevent connection exhaustion
+const _studentBootstrapCache = new Map<string, { payload: any; timestamp: number }>();
+
+export function invalidateStudentBootstrapCache(studentId?: string) {
+  if (studentId) {
+    _studentBootstrapCache.delete(studentId);
+  } else {
+    _studentBootstrapCache.clear();
+  }
+}
+
 // 7. GET /api/student/bootstrap (Full PostgreSQL Student Portal State!)
 legacyCompatRouter.get(
   '/student/bootstrap',
@@ -590,6 +606,11 @@ legacyCompatRouter.get(
   requireRole('STUDENT'),
   asyncHandler(async (req: AuthenticatedRequest, res) => {
     const studentId = req.auth!.studentId!;
+    const cached = _studentBootstrapCache.get(studentId);
+    if (cached && Date.now() - cached.timestamp < 30_000) {
+      return res.json(cached.payload);
+    }
+
     const [ctx, drives, apps, modules, gaps] = await Promise.all([
       loadStudentFullContext(studentId),
       mapCompaniesToFrontendDrives(studentId),
@@ -598,7 +619,7 @@ legacyCompatRouter.get(
       loadStudentFrontendSkillGaps(studentId),
     ]);
 
-    res.json({
+    const payload = {
       profile: ctx?.frontendProfile || null,
       companies: drives,
       applications: apps,
@@ -608,7 +629,10 @@ legacyCompatRouter.get(
       readiness: ctx?.readiness || null,
       completion: ctx?.completion || null,
       capabilities: getCapabilityFlags(),
-    });
+    };
+
+    _studentBootstrapCache.set(studentId, { payload, timestamp: Date.now() });
+    res.json(payload);
   })
 );
 
