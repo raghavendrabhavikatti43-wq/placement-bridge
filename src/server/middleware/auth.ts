@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { prisma, Prisma } from '../../db/prisma.ts';
 import { getOrCreateStudentByFirebaseUid } from '../../db/users.ts';

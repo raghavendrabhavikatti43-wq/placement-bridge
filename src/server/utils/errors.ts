@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction, RequestHandler } from 'express';
+import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { Prisma } from '@prisma/client';
 import { logger, scrubConnectionUris } from '../config/logger.ts';
 
