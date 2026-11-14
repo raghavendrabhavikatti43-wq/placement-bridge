@@ -26,6 +26,8 @@ function buildNormalizedDatasourceUrl(): string {
     if (isNeon && !parsed.searchParams.has('sslmode')) {
       parsed.searchParams.set('sslmode', 'require');
     }
+    // Neon PgBouncer does not support SCRAM channel binding; strip to prevent connection drops
+    parsed.searchParams.delete('channel_binding');
     if (isPooler && !parsed.searchParams.has('pgbouncer')) {
       parsed.searchParams.set('pgbouncer', 'true');
     }
