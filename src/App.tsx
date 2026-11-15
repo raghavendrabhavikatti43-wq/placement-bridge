@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Component, type ReactNode, type ErrorInfo } from 'react';
 import {
   ApplicationRecord,
   ApplicationStatus,
@@ -60,6 +60,48 @@ import {
 } from './services/api/client';
 
 const AVATAR_STORAGE_KEY = 'placement_portal_custom_avatar_v1';
+
+class ErrorBoundary extends (React.Component as any) {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error('ErrorBoundary caught error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-8 max-w-xl mx-auto my-12 bg-white dark:bg-slate-900 rounded-2xl border border-red-200 dark:border-red-900/50 shadow-sm text-center space-y-4">
+          <div className="w-12 h-12 mx-auto rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 flex items-center justify-center">
+            <span className="material-symbols-outlined text-[28px]">warning</span>
+          </div>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Something went wrong</h2>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            {this.state.error?.message || 'An unexpected error occurred in this view.'}
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              this.setState({ hasError: false, error: null });
+              if (this.props.onReset) this.props.onReset();
+            }}
+            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold shadow-sm transition-colors"
+          >
+            Return to Dashboard
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export default function App() {
   // Authentication & Portal Isolation State
@@ -682,6 +724,8 @@ export default function App() {
         return (
           <RecruitmentView
             profile={profile}
+            companies={companies}
+            authToken={authToken}
           />
         );
       default:
@@ -723,7 +767,9 @@ export default function App() {
       />
 
       <main className="flex-1 lg:ml-72 pt-20 px-4 sm:px-6 lg:px-8 pb-12 w-full max-w-[1600px] overflow-x-hidden">
-        {renderActiveView()}
+        <ErrorBoundary onReset={() => setCurrentPath('dashboard')}>
+          {renderActiveView()}
+        </ErrorBoundary>
       </main>
 
       {/* Global Modals & Dialogs (Student Scope Only) */}

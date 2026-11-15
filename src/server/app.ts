@@ -12,7 +12,7 @@ import {
   requestIdMiddleware,
   securityHeadersMiddleware,
 } from './middleware/security.ts';
-import { authenticate, requireRole } from './middleware/auth.ts';
+import { authenticate, optionalAuthenticate, requireRole } from './middleware/auth.ts';
 import { authRouter } from './routes/auth.routes.ts';
 import { studentRouter } from './routes/student.routes.ts';
 import { companiesRouter } from './routes/companies.routes.ts';
@@ -104,7 +104,7 @@ export function createApiApp() {
   app.use('/api/v1', resumeAiRouter);
   app.use('/api/v1', progressRouter);
   app.use('/api/v1/admin', adminRouter);
-  app.use('/api/recruitment', authenticate, recruitmentRouter);
+  app.use('/api/recruitment', optionalAuthenticate, recruitmentRouter);
 
   // ==========================================================================
   // 4. POSTGRESQL-BACKED /api/* COMPATIBILITY ROUTES FOR EXISTING FRONTEND
