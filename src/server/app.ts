@@ -22,6 +22,7 @@ import { resumeAiRouter } from './routes/resumeAi.routes.ts';
 import { progressRouter } from './routes/progress.routes.ts';
 import { adminRouter } from './routes/admin.routes.ts';
 import { legacyCompatRouter } from './routes/legacyCompat.routes.ts';
+import { recruitmentRouter } from './routes/recruitment.routes.ts';
 import { sendSuccess } from './utils/response.ts';
 
 export function createApiApp() {
@@ -103,6 +104,7 @@ export function createApiApp() {
   app.use('/api/v1', resumeAiRouter);
   app.use('/api/v1', progressRouter);
   app.use('/api/v1/admin', adminRouter);
+  app.use('/api/recruitment', authenticate, recruitmentRouter);
 
   // ==========================================================================
   // 4. POSTGRESQL-BACKED /api/* COMPATIBILITY ROUTES FOR EXISTING FRONTEND

@@ -33,6 +33,7 @@ import { CodingPracticePage } from './components/CodingPracticePage';
 import { InterviewPrepView } from './components/InterviewPrepView';
 import { RecommendationsView } from './components/EligibilityAndRecsViews';
 import { ResumeScreeningView } from './components/ResumeScreeningView';
+import { RecruitmentView } from './components/RecruitmentView';
 import { MyProfileView } from './components/MyProfileView';
 import { SecondaryViews } from './components/SecondaryViews';
 import { EligibilityModal } from './components/EligibilityModal';
@@ -675,6 +676,12 @@ export default function App() {
           <ResumeScreeningView
             profile={profile}
             companies={companies}
+          />
+        );
+      case 'recruitment':
+        return (
+          <RecruitmentView
+            profile={profile}
           />
         );
       default:

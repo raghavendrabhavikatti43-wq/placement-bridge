@@ -196,6 +196,58 @@ enum BookmarkKind {
   @@map("bookmark_kind")
 }
 
+enum DriveStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  CANCELLED
+
+  @@map("drive_status")
+}
+
+enum ApplicationStatus {
+  APPLIED
+  UNDER_REVIEW
+  SHORTLISTED
+  INTERVIEW_SCHEDULED
+  SELECTED
+  REJECTED
+  WITHDRAWN
+
+  @@map("application_status")
+}
+
+enum InterviewMode {
+  ONLINE
+  OFFLINE
+
+  @@map("interview_mode")
+}
+
+enum InterviewScheduleStatus {
+  SCHEDULED
+  ACKNOWLEDGED
+  RESCHEDULED
+  COMPLETED
+  CANCELLED
+
+  @@map("interview_schedule_status")
+}
+
+enum PlacementNotifType {
+  NEW_OPPORTUNITY
+  MATCHING_COMPANY
+  DEADLINE_REMINDER
+  STATUS_CHANGE
+  INTERVIEW_SCHEDULED
+  INTERVIEW_CHANGED
+  INTERVIEW_CANCELLED
+  UPCOMING_INTERVIEW
+  ANNOUNCEMENT
+
+  @@map("placement_notif_type")
+}
+
 // ============================================================================
 // 1. AUTHENTICATION, SESSIONS, AUDIT & FILE ASSETS
 // ============================================================================
@@ -222,6 +274,11 @@ model User {
   auditLogs     AuditLog[]
   announcements Announcement[]
   fileAssets    FileAsset[]
+  placementDrivesCreated  PlacementDrive[]          @relation("DriveCreatedBy")
+  applicationStatusChanges ApplicationStatusHistory[]
+  interviewsCreated       InterviewSchedule[]       @relation("InterviewCreatedBy")
+  placementNotifications  PlacementNotification[]   @relation("PlacementNotifUser")
+  notificationPreferences NotificationPreference[]
 
   @@index([role, isActive], map: "users_role_active_idx")
   @@map("users")
@@ -351,6 +408,8 @@ model StudentProfile {
   activityLogs           LearningActivityLog[]
   badges                 StudentBadge[]
   announcementReceipts   AnnouncementRecipient[]
+  driveMatches           DriveMatch[]
+  jobApplications        JobApplication[]
 
   @@index([department, graduationYear], map: "student_profiles_dept_grad_idx")
   @@map("student_profiles")
@@ -534,6 +593,7 @@ model Company {
   bookmarks          CompanyBookmark[]
   driveApplications  DriveApplication[]
   interviewQuestions InterviewQuestion[]
+  placementDrives    PlacementDrive[]
 
   @@index([industry], map: "companies_industry_idx")
   @@map("companies")
@@ -1231,4 +1291,145 @@ model Bookmark {
 
   @@unique([studentId, kind, targetId], map: "bookmarks_student_kind_target_uq")
   @@map("bookmarks")
+}
+
+// ============================================================================
+// RECRUITMENT AUTOMATION MODELS
+// ============================================================================
+
+model PlacementDrive {
+  id               String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  companyId        String      @map("company_id") @db.Uuid
+  jobTitle         String      @map("job_title")
+  jobDescription   String      @map("job_description")
+  location         String?
+  ctcMin           Decimal?    @map("ctc_min") @db.Decimal(10, 2)
+  ctcMax           Decimal?    @map("ctc_max") @db.Decimal(10, 2)
+  eligibilityCriteria Json?    @map("eligibility_criteria")
+  applicationDeadline DateTime @map("application_deadline") @db.Timestamptz(6)
+  driveDate        DateTime?   @map("drive_date") @db.Timestamptz(6)
+  interviewDates   DateTime[]  @map("interview_dates") @db.Timestamptz(6)
+  status           DriveStatus @default(DRAFT)
+  createdById      String      @map("created_by_id") @db.Uuid
+  createdAt        DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime    @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  company          Company               @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  createdBy        User                  @relation("DriveCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  driveMatches     DriveMatch[]
+  applications     JobApplication[]
+  notifications    PlacementNotification[]
+
+  @@index([status, applicationDeadline], map: "placement_drives_status_deadline_idx")
+  @@index([companyId], map: "placement_drives_company_idx")
+  @@map("placement_drives")
+}
+
+model DriveMatch {
+  id                  String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  driveId             String            @map("drive_id") @db.Uuid
+  studentId           String            @map("student_id") @db.Uuid
+  eligibilityStatus   EligibilityStatus
+  failingCriteria     String[]          @map("failing_criteria")
+  compatibilityScore  Decimal?          @map("compatibility_score") @db.Decimal(5, 2)
+  whyYouMatch         String[]          @map("why_you_match")
+  notifiedAt          DateTime?         @map("notified_at") @db.Timestamptz(6)
+  createdAt           DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  drive               PlacementDrive    @relation(fields: [driveId], references: [id], onDelete: Cascade)
+  student             StudentProfile    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([driveId, studentId], map: "drive_matches_drive_student_uq")
+  @@index([studentId, eligibilityStatus], map: "drive_matches_student_status_idx")
+  @@map("drive_matches")
+}
+
+model JobApplication {
+  id          String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  driveId     String            @map("drive_id") @db.Uuid
+  studentId   String            @map("student_id") @db.Uuid
+  status      ApplicationStatus @default(APPLIED)
+  coverNote   String?           @map("cover_note")
+  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  drive         PlacementDrive              @relation(fields: [driveId], references: [id], onDelete: Cascade)
+  student       StudentProfile              @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  statusHistory ApplicationStatusHistory[]
+  interviews    InterviewSchedule[]
+
+  @@unique([studentId, driveId], map: "job_applications_student_drive_uq")
+  @@index([driveId, status], map: "job_applications_drive_status_idx")
+  @@index([studentId, status], map: "job_applications_student_status_idx")
+  @@map("job_applications")
+}
+
+model ApplicationStatusHistory {
+  id            String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  applicationId String             @map("application_id") @db.Uuid
+  fromStatus    ApplicationStatus? @map("from_status")
+  toStatus      ApplicationStatus  @map("to_status")
+  actorId       String             @map("actor_id") @db.Uuid
+  note          String?
+  createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  application   JobApplication     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  actor         User               @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([applicationId, createdAt], map: "app_status_history_app_created_idx")
+  @@map("application_status_history")
+}
+
+model InterviewSchedule {
+  id             String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  applicationId  String                  @map("application_id") @db.Uuid
+  scheduledAt    DateTime                @map("scheduled_at") @db.Timestamptz(6)
+  durationMins   Int                     @default(60) @map("duration_mins")
+  mode           InterviewMode           @default(ONLINE)
+  meetingLink    String?                 @map("meeting_link")
+  location       String?
+  instructions   String?
+  status         InterviewScheduleStatus @default(SCHEDULED)
+  createdById    String                  @map("created_by_id") @db.Uuid
+  acknowledgedAt DateTime?               @map("acknowledged_at") @db.Timestamptz(6)
+  createdAt      DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime                @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  application    JobApplication   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  createdBy      User             @relation("InterviewCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([applicationId], map: "interview_schedules_app_idx")
+  @@index([scheduledAt], map: "interview_schedules_time_idx")
+  @@map("interview_schedules")
+}
+
+model PlacementNotification {
+  id          String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String              @map("user_id") @db.Uuid
+  driveId     String?             @map("drive_id") @db.Uuid
+  type        PlacementNotifType
+  title       String
+  message     String
+  linkTarget  String?             @map("link_target")
+  isRead      Boolean             @default(false) @map("is_read")
+  dedupeKey   String              @unique @map("dedupe_key")
+  createdAt   DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user        User                @relation("PlacementNotifUser", fields: [userId], references: [id], onDelete: Cascade)
+  drive       PlacementDrive?     @relation(fields: [driveId], references: [id], onDelete: SetNull)
+
+  @@index([userId, isRead, createdAt], map: "placement_notifs_user_read_created_idx")
+  @@map("placement_notifications")
+}
+
+model NotificationPreference {
+  id          String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String              @map("user_id") @db.Uuid
+  notifType   PlacementNotifType  @map("notif_type")
+  enabled     Boolean             @default(true)
+
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, notifType], map: "notif_prefs_user_type_uq")
+  @@map("notification_preferences")
 }

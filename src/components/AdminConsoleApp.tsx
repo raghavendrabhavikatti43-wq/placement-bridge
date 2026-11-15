@@ -9,6 +9,7 @@ import {
 } from '../types';
 import { AdminAvatarEditorModal, getAdminAvatarBgClass } from './AdminAvatarEditorModal';
 import { ThemeToggleButton } from '../context/ThemeContext';
+import { AdminRecruitmentPanel } from './AdminRecruitmentView';
 
 interface AdminConsoleAppProps {
   user: AuthUser;
@@ -17,7 +18,7 @@ interface AdminConsoleAppProps {
   onUpdateAuthUser: (updatedUser: AuthUser) => void;
 }
 
-type AdminSection = 'overview' | 'drives' | 'candidates' | 'profile' | 'security';
+type AdminSection = 'overview' | 'drives' | 'candidates' | 'recruitment-auto' | 'profile' | 'security';
 
 interface AdminStudentSummary {
   id: string;
@@ -360,6 +361,7 @@ export const AdminConsoleApp: React.FC<AdminConsoleAppProps> = ({
     { id: 'overview', label: 'Executive Governance', icon: 'monitoring' },
     { id: 'drives', label: 'Campus Drives Control', icon: 'domain_add' },
     { id: 'candidates', label: 'Candidates & Pipeline', icon: 'badge' },
+    { id: 'recruitment-auto', label: 'Recruitment Automation', icon: 'work' },
     { id: 'profile', label: 'Admin Profile & Info', icon: 'manage_accounts' },
     { id: 'security', label: 'Security & Audit Log', icon: 'gpp_good' },
   ];
@@ -1579,6 +1581,25 @@ export const AdminConsoleApp: React.FC<AdminConsoleAppProps> = ({
                   </div>
                 </div>
               )}
+
+              {/* RECRUITMENT AUTOMATION SECTION */}
+              {section === 'recruitment-auto' && (
+                <div className="space-y-6">
+                  <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold block">
+                      PLACEMENT AUTOMATION
+                    </span>
+                    <h1 className="font-headline-xl text-slate-900 dark:text-slate-100 font-extrabold mt-0.5">
+                      Recruitment Automation
+                    </h1>
+                    <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
+                      Create placement drives, manage applications, schedule interviews, and track the full recruitment pipeline.
+                    </p>
+                  </div>
+                  <AdminRecruitmentPanel token={token} />
+                </div>
+              )}
+
             </>
           )}
         </main>

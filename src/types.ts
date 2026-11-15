@@ -16,6 +16,7 @@ export type NavigationPath =
   | 'resources'
   | 'ai-assistant'
   | 'resume-screening'
+  | 'recruitment'
   | 'settings'
   | 'logout';
 
